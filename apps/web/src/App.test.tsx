@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-it('renders the Resolute Force wordmark', () => {
+it('renders the landing shell', () => {
   render(<App />);
-  expect(screen.getByText(/resolute/i)).toBeInTheDocument();
+  expect(screen.getByTestId('landing')).toBeInTheDocument();
 });
