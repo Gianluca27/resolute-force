@@ -1,4 +1,4 @@
-import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { beforeEach, it, expect, vi } from 'vitest';
 
 vi.mock('../src/services/notify.js', () => ({
   notifyOrderPaid: vi.fn().mockResolvedValue(undefined),

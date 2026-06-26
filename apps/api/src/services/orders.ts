@@ -56,8 +56,7 @@ export async function markPaidByOrderNo(orderNo: string, mpPaymentId: string) {
   });
 
   if (transitioned) {
-    const { notifyOrderPaid } = await import('./notify.js');
-    void notifyOrderPaid(orderNo).catch((e) => console.error('[notify:paid]', e));
+    void import('./notify.js').then((m) => m.notifyOrderPaid(orderNo)).catch((e) => console.error('[notify:paid]', e));
   }
   return order;
 }

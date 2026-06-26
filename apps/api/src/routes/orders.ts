@@ -13,8 +13,7 @@ ordersRouter.post('/transfer', async (req, res) => {
   try {
     const { order } = await createOrder({ items: parsed.data.items, customer: parsed.data.customer, method: 'transfer' });
     const content = await prisma.siteContent.findUnique({ where: { id: 1 } });
-    const { notifyTransferOrder } = await import('../services/notify.js');
-    void notifyTransferOrder(order.orderNo, { bankAlias: content?.bankAlias ?? '', bankCbu: content?.bankCbu ?? '' }).catch((e) => console.error('[notify:transfer]', e));
+    void import('../services/notify.js').then((m) => m.notifyTransferOrder(order.orderNo, { bankAlias: content?.bankAlias ?? '', bankCbu: content?.bankCbu ?? '' })).catch((e) => console.error('[notify:transfer]', e));
     return res.json({
       orderNo: order.orderNo, total: order.total, count: order.items.reduce((a, i) => a + i.qty, 0),
       name: order.customerName, bankAlias: content?.bankAlias ?? '', bankCbu: content?.bankCbu ?? '',
