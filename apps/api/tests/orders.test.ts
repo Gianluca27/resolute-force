@@ -1,8 +1,8 @@
 import { beforeEach, describe, it, expect } from 'vitest';
-import { seed } from '../prisma/seed';
-import { resetDb } from './helpers/db';
-import { prisma } from '../src/prisma';
-import { createOrder, markPaidByOrderNo } from '../src/services/orders';
+import { seed } from '../prisma/seed.js';
+import { resetDb } from './helpers/db.js';
+import { prisma } from '../src/prisma.js';
+import { createOrder, markPaidByOrderNo } from '../src/services/orders.js';
 
 const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', dir: 'Calle 1', ciudad: 'CABA' };
 let navyId = '';
