@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@mercadopago/sdk-react": "^0.0.22",
     "@resolute/shared": "*",
     "@tanstack/react-query": "^5.101.1",
     "react": "^18.3.1",

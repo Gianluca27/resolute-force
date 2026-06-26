@@ -1,4 +1,8 @@
-import type { ProductDTO, DropDTO, ContentDTO, CartLineInput, QuoteResult } from '@resolute/shared';
+import type { ProductDTO, DropDTO, ContentDTO, CartLineInput, QuoteResult, CustomerInput } from '@resolute/shared';
+
+export interface CardResult { status: string; orderNo: string; total?: number; count?: number; name?: string; detail?: string; }
+export interface PrefResult { preferenceId: string; initPoint: string; orderNo: string; }
+export interface TransferResult { orderNo: string; total: number; count: number; name: string; bankAlias: string; bankCbu: string; }
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
@@ -22,4 +26,7 @@ export const api = {
   drop: () => get<DropDTO>('/api/drop'),
   content: () => get<ContentDTO>('/api/content'),
   quote: (items: CartLineInput[]) => post<QuoteResult>('/api/checkout/quote', { items }),
+  paymentCard: (body: { items: CartLineInput[]; customer: CustomerInput; token: string; installments: number; paymentMethodId: string; issuerId?: string; payer: { email: string; identification?: { type: string; number: string } } }) => post<CardResult>('/api/payments/card', body),
+  preference: (body: { items: CartLineInput[]; customer: CustomerInput }) => post<PrefResult>('/api/payments/preference', body),
+  transferOrder: (body: { items: CartLineInput[]; customer: CustomerInput }) => post<TransferResult>('/api/orders/transfer', body),
 };
