@@ -9,6 +9,12 @@ const schema = z.object({
   JWT_SECRET: z.string().min(32).default('dev-secret-change-me-in-production!!'),
   MP_ACCESS_TOKEN: z.string().default('TEST-ACCESS-TOKEN'),
   MP_PUBLIC_KEY: z.string().default('TEST-PUBLIC-KEY'),
+  SMTP_HOST: z.string().default(''),
+  SMTP_PORT: z.coerce.number().default(465),
+  SMTP_USER: z.string().default(''),
+  SMTP_PASS: z.string().default(''),
+  MAIL_FROM: z.string().default('Resolute Force <no-reply@resoluteforce.com>'),
+  ADMIN_NOTIFY_EMAIL: z.string().default(''),
 });
 
 export const env = schema.parse(process.env);
