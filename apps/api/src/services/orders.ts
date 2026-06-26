@@ -32,10 +32,18 @@ export async function createOrder(input: { items: CartLineInput[]; customer: Cus
 
 export async function markPaidByOrderNo(orderNo: string, mpPaymentId: string) {
   return prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { orderNo }, include: { items: true } });
-    if (!order) throw new Error(`Orden inexistente: ${orderNo}`);
-    if (order.status === 'paid' || order.status === 'shipped') return order; // idempotent
+    // Atomic claim: only one concurrent caller can win this update
+    const claimed = await tx.order.updateMany({
+      where: { orderNo, status: { notIn: ['paid', 'shipped'] } },
+      data: { status: 'paid', mpPaymentId },
+    });
+    if (claimed.count !== 1) {
+      // Already paid/shipped — idempotent, return current state
+      return tx.order.findUniqueOrThrow({ where: { orderNo }, include: { items: true } });
+    }
 
+    // Decrement stock for each line — conditional guard prevents oversell
+    const order = await tx.order.findUniqueOrThrow({ where: { orderNo }, include: { items: true } });
     for (const it of order.items) {
       if (!it.productId) continue;
       const r = await tx.variant.updateMany({
@@ -44,6 +52,6 @@ export async function markPaidByOrderNo(orderNo: string, mpPaymentId: string) {
       });
       if (r.count !== 1) throw new Error(`Sin stock al confirmar ${it.line} talle ${it.size}`);
     }
-    return tx.order.update({ where: { id: order.id }, data: { status: 'paid', mpPaymentId } });
+    return order;
   });
 }

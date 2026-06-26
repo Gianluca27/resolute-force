@@ -38,4 +38,17 @@ describe('markPaidByOrderNo', () => {
     const reread = await prisma.order.findUniqueOrThrow({ where: { orderNo: order.orderNo } });
     expect(reread.status).toBe('paid');
   });
+
+  it('throws and rolls back when stock is exhausted at mark-paid time', async () => {
+    const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 5 }], customer, method: 'card' });
+    // Drain all stock between order creation and payment confirmation
+    await prisma.variant.updateMany({ where: { productId: navyId, size: 'M' }, data: { stock: 0 } });
+    await expect(markPaidByOrderNo(order.orderNo, 'PAY-X')).rejects.toThrow(/stock/i);
+    // Order must still be pending (transaction rolled back)
+    const reread = await prisma.order.findUniqueOrThrow({ where: { orderNo: order.orderNo } });
+    expect(reread.status).toBe('pending');
+    // Stock must still be 0 (not double-decremented)
+    const v = await prisma.variant.findFirstOrThrow({ where: { productId: navyId, size: 'M' } });
+    expect(v.stock).toBe(0);
+  });
 });
