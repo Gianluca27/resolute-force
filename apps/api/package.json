@@ -12,11 +12,12 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@resolute/shared": "*",
     "@prisma/client": "^5.22.0",
+    "@resolute/shared": "*",
     "cors": "^2.8.5",
     "express": "^4.21.1",
     "helmet": "^8.0.0",
+    "mercadopago": "^2.13.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
