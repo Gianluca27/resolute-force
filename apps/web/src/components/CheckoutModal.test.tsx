@@ -1,5 +1,5 @@
 import { beforeEach, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import CheckoutModal from './CheckoutModal';
 import { useCart } from '../store/cart';
 

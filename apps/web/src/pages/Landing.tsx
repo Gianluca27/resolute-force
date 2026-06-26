@@ -33,7 +33,7 @@ export default function Landing() {
       <Historia />
       {drop.data && <Proximos drop={drop.data} />}
       <Contacto content={content.data} />
-      <Footer />
+      <Footer contactWhatsapp={content.data.contactWhatsapp} />
       {open && <CartDrawer />}
       {checkoutOpen && <CheckoutModal />}
       <Toast />
