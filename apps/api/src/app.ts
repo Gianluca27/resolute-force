@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { env } from './env.js';
 import { productsRouter } from './routes/products.js';
+import { dropRouter } from './routes/drop.js';
+import { contentRouter } from './routes/content.js';
 import { notFound, errorHandler } from './middleware/error.js';
 
 export function createApp() {
@@ -13,6 +15,8 @@ export function createApp() {
 
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
   app.use('/api/products', productsRouter);
+  app.use('/api/drop', dropRouter);
+  app.use('/api/content', contentRouter);
 
   app.use(notFound);
   app.use(errorHandler);
