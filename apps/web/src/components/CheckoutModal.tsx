@@ -1,27 +1,33 @@
 import { useState } from 'react';
 import { customerSchema } from '@resolute/shared';
-import type { CartLineInput, CustomerInput } from '@resolute/shared';
+import type { CartLineInput, CustomerInput, QuoteResult } from '@resolute/shared';
 import { api } from '../lib/api';
 import { money } from '../lib/money';
 import { useCart, cartCount } from '../store/cart';
-import { stubPlaceOrder, type PayMethod, type PlaceOrder, type PlacedOrder } from '../lib/placeOrder';
+import CardBrick, { type CardFormData } from './payment/CardBrick';
+import WalletButton from './payment/WalletButton';
+
+type PayMethod = 'transfer' | 'card' | 'wallet';
+interface Confirmation { orderNo: string; total: number; count: number; pay: PayMethod; name: string; bankAlias?: string; bankCbu?: string; }
 
 const inputCls = 'bg-card border border-line2 rounded-[3px] text-tx px-[14px] py-[13px] text-[15px] outline-none transition focus:border-gold';
 const labelCls = 'font-display text-[12.5px] tracking-[0.14em] uppercase text-mut';
 
-export default function CheckoutModal({ placeOrder = stubPlaceOrder }: { placeOrder?: PlaceOrder }) {
+export default function CheckoutModal() {
   const { items, setCheckoutOpen, clear } = useCart();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<CustomerInput>({ nombre: '', email: '', tel: '', dir: '', ciudad: '' });
   const [method, setMethod] = useState<PayMethod>('transfer');
-  const [q, setQ] = useState<Awaited<ReturnType<typeof api.quote>> | null>(null);
-  const [order, setOrder] = useState<PlacedOrder | null>(null);
+  const [q, setQ] = useState<QuoteResult | null>(null);
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const lineItems: CartLineInput[] = items.map((i) => ({ productId: i.productId, size: i.size, qty: i.qty }));
   const close = () => { setCheckoutOpen(false); setStep(0); };
   const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const total = method === 'transfer' ? q?.totalTransfer ?? 0 : q?.totalCard ?? 0;
 
   async function toPago() {
     setErr(null);
@@ -32,19 +38,39 @@ export default function CheckoutModal({ placeOrder = stubPlaceOrder }: { placeOr
     finally { setBusy(false); }
   }
 
-  async function confirm() {
-    if (!q) return;
+  async function confirmTransfer() {
     setBusy(true); setErr(null);
     try {
-      const placed = await placeOrder({ items: lineItems, customer: form, method, quote: q });
-      setOrder(placed); setStep(2); clear();
-    } catch (e) { setErr(e instanceof Error ? e.message : 'No se pudo confirmar el pedido'); }
+      const r = await api.transferOrder({ items: lineItems, customer: form });
+      setConfirmation({ orderNo: r.orderNo, total: r.total, count: r.count, pay: 'transfer', name: r.name, bankAlias: r.bankAlias, bankCbu: r.bankCbu });
+      setStep(2); clear();
+    } catch (e) { setErr(e instanceof Error ? e.message : 'No se pudo crear el pedido'); }
     finally { setBusy(false); }
+  }
+
+  async function startWallet() {
+    setBusy(true); setErr(null);
+    try { const r = await api.preference({ items: lineItems, customer: form }); setPreferenceId(r.preferenceId); }
+    catch (e) { setErr(e instanceof Error ? e.message : 'No se pudo iniciar el pago'); }
+    finally { setBusy(false); }
+  }
+
+  async function payCard(data: CardFormData) {
+    setErr(null);
+    const r = await api.paymentCard({
+      items: lineItems, customer: form, token: data.token, installments: data.installments,
+      paymentMethodId: data.payment_method_id, issuerId: data.issuer_id, payer: data.payer,
+    });
+    if (r.status === 'approved') {
+      setConfirmation({ orderNo: r.orderNo, total: r.total ?? total, count: r.count ?? cartCount(items), pay: 'card', name: r.name ?? form.nombre });
+      setStep(2); clear();
+    } else {
+      setErr(`Pago ${r.status === 'rejected' ? 'rechazado' : 'pendiente'}. Probá otra tarjeta o medio de pago.`);
+    }
   }
 
   const stepTitle = step === 0 ? 'Tus datos' : step === 1 ? 'Forma de pago' : 'Listo';
   const progress = step === 0 ? '33%' : step === 1 ? '66%' : '100%';
-  const total = method === 'transfer' ? q?.totalTransfer ?? 0 : q?.totalCard ?? 0;
 
   return (
     <div onClick={close} className="fixed inset-0 z-[400] bg-black/70 backdrop-blur-[4px] flex items-start justify-center px-4 py-[clamp(16px,5vh,60px)] overflow-y-auto animate-fade">
@@ -67,7 +93,6 @@ export default function CheckoutModal({ placeOrder = stubPlaceOrder }: { placeOr
               </div>
               <Field label="Dirección de envío"><input className={inputCls} placeholder="Calle y número" value={form.dir} onChange={(e) => setForm({ ...form, dir: e.target.value })} /></Field>
               <Field label="Ciudad / Provincia"><input className={inputCls} placeholder="Ciudad, Provincia" value={form.ciudad} onChange={(e) => setForm({ ...form, ciudad: e.target.value })} /></Field>
-              <div className="flex justify-between items-baseline mt-[6px] pt-[14px] border-t border-line"><span className="text-mut font-display tracking-[0.1em] uppercase text-[14px]">Total ({cartCount(items)})</span></div>
               <button disabled={busy} onClick={toPago} className="w-full mt-1 bg-red text-white border-0 rounded-[2px] p-4 cursor-pointer font-display font-bold text-[16px] tracking-[0.13em] uppercase hover:bg-redd disabled:opacity-60">Continuar al pago</button>
             </div>
           )}
@@ -75,34 +100,52 @@ export default function CheckoutModal({ placeOrder = stubPlaceOrder }: { placeOr
           {step === 1 && q && (
             <div className="flex flex-col gap-[14px]">
               <div className="font-display text-[12.5px] tracking-[0.14em] uppercase text-mut">Elegí cómo pagar</div>
-              <PayOption active={method === 'transfer'} onClick={() => setMethod('transfer')} title="Transferencia" sub="Te enviamos los datos por email" badge="10% OFF" />
-              <PayOption active={method === 'card'} onClick={() => setMethod('card')} title="Tarjeta" sub="Hasta 3 cuotas sin interés" />
-              <PayOption active={method === 'wallet'} onClick={() => setMethod('wallet')} title="Mercado Pago" sub="Pagá con tu cuenta de MercadoPago" />
+              <PayOption active={method === 'transfer'} onClick={() => { setMethod('transfer'); setPreferenceId(null); }} title="Transferencia" sub="Te enviamos los datos por email" badge="10% OFF" />
+              <PayOption active={method === 'card'} onClick={() => { setMethod('card'); setPreferenceId(null); }} title="Tarjeta" sub="Hasta 3 cuotas sin interés" />
+              <PayOption active={method === 'wallet'} onClick={() => { setMethod('wallet'); setPreferenceId(null); }} title="Mercado Pago" sub="Pagá con tu cuenta de MercadoPago" />
+
               <div className="flex flex-col gap-2 mt-[6px] pt-[14px] border-t border-line">
                 <Row label="Subtotal" value={money(q.subtotal)} />
                 {method === 'transfer' && <Row label="Descuento transferencia" value={`− ${money(q.transferDiscount)}`} gold />}
                 <Row label="Envío" value="Gratis" gold />
                 <div className="flex justify-between items-baseline mt-1"><span className="font-display tracking-[0.1em] uppercase text-[15px]">Total</span><span className="font-display font-black text-[28px]">{money(total)}</span></div>
               </div>
-              <div className="flex gap-[10px] mt-1">
-                <button onClick={() => setStep(0)} className="shrink-0 bg-transparent text-tx border border-line2 rounded-[2px] px-5 py-4 cursor-pointer font-display font-bold text-[15px] tracking-[0.1em] uppercase hover:border-tx">Volver</button>
-                <button disabled={busy} onClick={confirm} className="flex-1 bg-red text-white border-0 rounded-[2px] p-4 cursor-pointer font-display font-bold text-[16px] tracking-[0.13em] uppercase hover:bg-redd disabled:opacity-60">Confirmar pedido</button>
-              </div>
+
+              {method === 'card' && <div className="mt-1"><CardBrick amount={total} onPay={payCard} /></div>}
+
+              {method === 'wallet' && (preferenceId
+                ? <WalletButton preferenceId={preferenceId} />
+                : <button disabled={busy} onClick={startWallet} className="w-full bg-red text-white border-0 rounded-[2px] p-4 cursor-pointer font-display font-bold text-[16px] tracking-[0.13em] uppercase hover:bg-redd disabled:opacity-60">Pagar con MercadoPago</button>)}
+
+              {method === 'transfer' && (
+                <div className="flex gap-[10px] mt-1">
+                  <button onClick={() => setStep(0)} className="shrink-0 bg-transparent text-tx border border-line2 rounded-[2px] px-5 py-4 cursor-pointer font-display font-bold text-[15px] tracking-[0.1em] uppercase hover:border-tx">Volver</button>
+                  <button disabled={busy} onClick={confirmTransfer} className="flex-1 bg-red text-white border-0 rounded-[2px] p-4 cursor-pointer font-display font-bold text-[16px] tracking-[0.13em] uppercase hover:bg-redd disabled:opacity-60">Confirmar pedido</button>
+                </div>
+              )}
             </div>
           )}
 
-          {step === 2 && order && (
+          {step === 2 && confirmation && (
             <div className="flex flex-col items-center text-center gap-4 pt-[14px] px-[6px] pb-[6px]">
               <div className="w-[74px] h-[74px] rounded-full flex items-center justify-center border-2 border-gold" style={{ background: 'radial-gradient(circle,rgba(232,181,62,.25),transparent 70%)' }}>
                 <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#e8b53e" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4 10-11" /></svg>
               </div>
               <h3 className="m-0 font-display font-black text-[32px] tracking-[0.02em] uppercase">¡Pedido confirmado!</h3>
-              <p className="m-0 text-mut text-[15.5px] leading-[1.6] max-w-[380px]">Gracias <span className="text-tx font-semibold">{order.name}</span>. Tu orden <span className="text-gold font-semibold">{order.orderNo}</span> está en marcha. Te enviamos los detalles por email.</p>
+              <p className="m-0 text-mut text-[15.5px] leading-[1.6] max-w-[380px]">Gracias <span className="text-tx font-semibold">{confirmation.name}</span>. Tu orden está en marcha. Te enviamos los detalles por email.</p>
+              {confirmation.pay === 'transfer' && confirmation.bankAlias && (
+                <div className="w-full bg-card border border-gold/40 rounded-[4px] px-[18px] py-4 text-left">
+                  <div className="font-display text-[12px] tracking-[0.14em] uppercase text-gold mb-2">Datos para transferir</div>
+                  <Row label="Alias" value={confirmation.bankAlias} />
+                  {confirmation.bankCbu && <Row label="CBU" value={confirmation.bankCbu} />}
+                  <Row label="Importe" value={money(confirmation.total)} />
+                </div>
+              )}
               <div className="w-full bg-card border border-line rounded-[4px] px-[18px] py-4 flex flex-col gap-[9px] mt-1">
-                <Row label="Orden" value={order.orderNo} />
-                <Row label="Artículos" value={String(order.count)} />
-                <Row label="Pago" value={order.pay} />
-                <div className="flex justify-between items-baseline pt-[9px] border-t border-line"><span className="text-mut">Total</span><span className="font-display font-black text-[24px]">{money(order.total)}</span></div>
+                <Row label="Orden" value={confirmation.orderNo} />
+                <Row label="Artículos" value={String(confirmation.count)} />
+                <Row label="Pago" value={confirmation.pay} />
+                <div className="flex justify-between items-baseline pt-[9px] border-t border-line"><span className="text-mut">Total</span><span className="font-display font-black text-[24px]">{money(confirmation.total)}</span></div>
               </div>
               <p className="m-0 font-display font-bold text-[18px] tracking-[0.08em] uppercase text-red">Stop at nothing 🔥</p>
               <button onClick={close} className="w-full bg-tx text-bg border-0 rounded-[2px] p-[15px] cursor-pointer font-display font-bold text-[16px] tracking-[0.13em] uppercase hover:bg-gold mt-1">Seguí entrenando</button>
@@ -122,7 +165,7 @@ function Row({ label, value, gold }: { label: string; value: string; gold?: bool
 }
 function PayOption({ active, onClick, title, sub, badge }: { active: boolean; onClick: () => void; title: string; sub: string; badge?: string }) {
   return (
-    <button onClick={onClick} className={`w-full flex items-center justify-between gap-3 rounded-[4px] p-4 cursor-pointer transition bg-card ${active ? 'border border-gold' : 'border border-line'}`}>
+    <button aria-label={title} onClick={onClick} className={`w-full flex items-center justify-between gap-3 rounded-[4px] p-4 cursor-pointer transition bg-card ${active ? 'border border-gold' : 'border border-line'}`}>
       <div className="flex items-center gap-3">
         <span className={`w-5 h-5 rounded-full shrink-0 inline-block transition ${active ? 'border-[6px] border-gold bg-bg' : 'border-2 border-line2'}`} />
         <div className="text-left"><div className="font-display font-bold text-[17px] tracking-[0.05em] uppercase">{title}</div><div className="text-mut text-[13px]">{sub}</div></div>
