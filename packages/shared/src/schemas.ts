@@ -4,7 +4,7 @@ import { SIZES } from './dto';
 export const cartLineSchema = z.object({
   productId: z.string().min(1),
   size: z.enum(SIZES),
-  qty: z.number().int().min(1).max(20),
+  qty: z.number().int().min(1),
 });
 
 export const customerSchema = z.object({
