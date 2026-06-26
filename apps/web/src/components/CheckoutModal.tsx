@@ -56,17 +56,20 @@ export default function CheckoutModal() {
   }
 
   async function payCard(data: CardFormData) {
-    setErr(null);
-    const r = await api.paymentCard({
-      items: lineItems, customer: form, token: data.token, installments: data.installments,
-      paymentMethodId: data.payment_method_id, issuerId: data.issuer_id, payer: data.payer,
-    });
-    if (r.status === 'approved') {
-      setConfirmation({ orderNo: r.orderNo, total: r.total ?? total, count: r.count ?? cartCount(items), pay: 'card', name: r.name ?? form.nombre });
-      setStep(2); clear();
-    } else {
-      setErr(`Pago ${r.status === 'rejected' ? 'rechazado' : 'pendiente'}. Probá otra tarjeta o medio de pago.`);
-    }
+    setBusy(true); setErr(null);
+    try {
+      const r = await api.paymentCard({
+        items: lineItems, customer: form, token: data.token, installments: data.installments,
+        paymentMethodId: data.payment_method_id, issuerId: data.issuer_id, payer: data.payer,
+      });
+      if (r.status === 'approved') {
+        setConfirmation({ orderNo: r.orderNo, total: r.total ?? total, count: r.count ?? cartCount(items), pay: 'card', name: r.name ?? form.nombre });
+        setStep(2); clear();
+      } else {
+        setErr(`Pago ${r.status === 'rejected' ? 'rechazado' : 'pendiente'}. Probá otra tarjeta o medio de pago.`);
+      }
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Error al procesar el pago'); }
+    finally { setBusy(false); }
   }
 
   const stepTitle = step === 0 ? 'Tus datos' : step === 1 ? 'Forma de pago' : 'Listo';
