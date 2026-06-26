@@ -2,7 +2,7 @@ const head = 'font-display font-bold text-[13px] tracking-[0.2em] uppercase text
 const fl = 'no-underline text-tx text-[15px] transition-colors hover:text-gold';
 const badge = 'text-mut text-[12px] font-display tracking-[0.12em] uppercase border border-line rounded-[2px] px-[11px] py-[6px]';
 
-export default function Footer() {
+export default function Footer({ contactWhatsapp }: { contactWhatsapp?: string }) {
   return (
     <footer className="bg-bg border-t border-line px-[clamp(18px,5vw,64px)] pt-[clamp(48px,7vh,72px)] pb-[34px]">
       <div className="max-w-[1180px] mx-auto flex flex-wrap gap-10 justify-between">
@@ -24,7 +24,7 @@ export default function Footer() {
           </div>
           <div>
             <div className={head}>Seguinos</div>
-            <div className="flex flex-col gap-[11px]"><a href="https://instagram.com" target="_blank" rel="noopener" className={fl}>Instagram</a><a href="https://wa.me/5493413213723" target="_blank" rel="noopener" className={fl}>WhatsApp</a></div>
+            <div className="flex flex-col gap-[11px]"><a href="https://instagram.com" target="_blank" rel="noopener" className={fl}>Instagram</a><a href={`https://wa.me/${contactWhatsapp ?? '5493413213723'}`} target="_blank" rel="noopener" className={fl}>WhatsApp</a></div>
           </div>
         </div>
       </div>
