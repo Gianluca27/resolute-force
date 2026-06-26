@@ -35,9 +35,24 @@ describe('POST /api/checkout/quote', () => {
     expect(res.body.error).toMatch(/stock/i);
   });
 
-  it('409s on an invalid size', async () => {
+  it('200s when the size is valid and in stock', async () => {
     const res = await request(app).post('/api/checkout/quote').send({ items: [{ productId: navyId, size: 'S', qty: 1 }] });
-    // 'S' exists in seed; use a product/size mismatch instead:
-    expect([200, 409]).toContain(res.status);
+    expect(res.status).toBe(200);
+  });
+
+  it('400s on an unknown size (not in enum)', async () => {
+    const res = await request(app).post('/api/checkout/quote').send({ items: [{ productId: navyId, size: 'XXS', qty: 1 }] });
+    expect(res.status).toBe(400);
+  });
+
+  it('409s when the requested size has no variant', async () => {
+    // Create a product with only M variant — no 'S' stock
+    const p = await prisma.product.create({ data: { slug: 'test-no-s', line: 'Test', color: 'Test', dotColor: '#000', price: 10000, imageUrl: '/x.png', sortOrder: 99, active: true } });
+    await prisma.variant.create({ data: { productId: p.id, size: 'M', stock: 5 } });
+    const res = await request(app).post('/api/checkout/quote').send({ items: [{ productId: p.id, size: 'S', qty: 1 }] });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/talle/i);
+    await prisma.variant.deleteMany({ where: { productId: p.id } });
+    await prisma.product.delete({ where: { id: p.id } });
   });
 });

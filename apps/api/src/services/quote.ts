@@ -2,6 +2,10 @@ import type { CartLineInput, QuoteResult, QuoteLine } from '@resolute/shared';
 import { prisma } from '../prisma.js';
 import { computeTotals } from './pricing.js';
 
+export class QuoteError extends Error {
+  constructor(msg: string) { super(msg); this.name = 'QuoteError'; }
+}
+
 export async function quote(items: CartLineInput[]): Promise<QuoteResult> {
   const ids = [...new Set(items.map((i) => i.productId))];
   const products = await prisma.product.findMany({ where: { id: { in: ids }, active: true }, include: { variants: true } });
@@ -10,10 +14,10 @@ export async function quote(items: CartLineInput[]): Promise<QuoteResult> {
   const lines: QuoteLine[] = [];
   for (const it of items) {
     const p = byId.get(it.productId);
-    if (!p) throw new Error(`Producto inexistente o inactivo: ${it.productId}`);
+    if (!p) throw new QuoteError(`Producto inexistente o inactivo: ${it.productId}`);
     const variant = p.variants.find((v) => v.size === it.size);
-    if (!variant) throw new Error(`Talle ${it.size} no disponible para ${p.line} (${p.color})`);
-    if (variant.stock < it.qty) throw new Error(`Sin stock suficiente de ${p.line} (${p.color}) talle ${it.size}`);
+    if (!variant) throw new QuoteError(`Talle ${it.size} no disponible para ${p.line} (${p.color})`);
+    if (variant.stock < it.qty) throw new QuoteError(`Sin stock suficiente de ${p.line} (${p.color}) talle ${it.size}`);
     lines.push({ productId: p.id, line: p.line, color: p.color, size: it.size, unitPrice: p.price, qty: it.qty, lineTotal: p.price * it.qty });
   }
 
