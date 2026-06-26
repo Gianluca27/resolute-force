@@ -9,6 +9,7 @@ import { notFound, errorHandler } from './middleware/error.js';
 import { checkoutRouter } from './routes/checkout.js';
 import { paymentsRouter } from './routes/payments.js';
 import { ordersRouter } from './routes/orders.js';
+import { adminRouter } from './routes/admin/index.js';
 
 export function createApp() {
   const app = express();
@@ -23,6 +24,7 @@ export function createApp() {
   app.use('/api/checkout', checkoutRouter);
   app.use('/api/payments', paymentsRouter);
   app.use('/api/orders', ordersRouter);
+  app.use('/api/admin', adminRouter);
 
   app.use(notFound);
   app.use(errorHandler);
