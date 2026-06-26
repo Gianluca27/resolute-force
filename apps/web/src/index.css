@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: #0a0a0b; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+::selection { background: #e4322b; color: #fff; }
+input::placeholder { color: #5c5c63; }
