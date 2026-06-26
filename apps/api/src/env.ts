@@ -5,7 +5,7 @@ const schema = z.object({
   PORT: z.coerce.number().default(4000),
   DATABASE_URL: z.string().default('file:./dev.db'),
   PUBLIC_WEB_URL: z.string().default('http://localhost:5173'),
-  JWT_SECRET: z.string().default('dev-secret-change-me'),
+  JWT_SECRET: z.string().min(32).default('dev-secret-change-me-in-production!!'),
 });
 
 export const env = schema.parse(process.env);
