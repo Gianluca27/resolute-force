@@ -31,7 +31,7 @@ export async function createOrder(input: { items: CartLineInput[]; customer: Cus
 }
 
 export async function markPaidByOrderNo(orderNo: string, mpPaymentId: string) {
-  return prisma.$transaction(async (tx) => {
+  const { order, transitioned } = await prisma.$transaction(async (tx) => {
     // Atomic claim: only one concurrent caller can win this update
     const claimed = await tx.order.updateMany({
       where: { orderNo, status: { notIn: ['paid', 'shipped'] } },
@@ -39,7 +39,7 @@ export async function markPaidByOrderNo(orderNo: string, mpPaymentId: string) {
     });
     if (claimed.count !== 1) {
       // Already paid/shipped — idempotent, return current state
-      return tx.order.findUniqueOrThrow({ where: { orderNo }, include: { items: true } });
+      return { order: await tx.order.findUniqueOrThrow({ where: { orderNo }, include: { items: true } }), transitioned: false };
     }
 
     // Decrement stock for each line — conditional guard prevents oversell
@@ -52,6 +52,12 @@ export async function markPaidByOrderNo(orderNo: string, mpPaymentId: string) {
       });
       if (r.count !== 1) throw new Error(`Sin stock al confirmar ${it.line} talle ${it.size}`);
     }
-    return order;
+    return { order, transitioned: true };
   });
+
+  if (transitioned) {
+    const { notifyOrderPaid } = await import('./notify.js');
+    void notifyOrderPaid(orderNo).catch((e) => console.error('[notify:paid]', e));
+  }
+  return order;
 }
