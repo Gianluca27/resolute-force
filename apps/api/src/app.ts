@@ -7,6 +7,8 @@ import { dropRouter } from './routes/drop.js';
 import { contentRouter } from './routes/content.js';
 import { notFound, errorHandler } from './middleware/error.js';
 import { checkoutRouter } from './routes/checkout.js';
+import { paymentsRouter } from './routes/payments.js';
+import { ordersRouter } from './routes/orders.js';
 
 export function createApp() {
   const app = express();
@@ -19,6 +21,8 @@ export function createApp() {
   app.use('/api/drop', dropRouter);
   app.use('/api/content', contentRouter);
   app.use('/api/checkout', checkoutRouter);
+  app.use('/api/payments', paymentsRouter);
+  app.use('/api/orders', ordersRouter);
 
   app.use(notFound);
   app.use(errorHandler);
