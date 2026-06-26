@@ -6,3 +6,10 @@ export interface ProductVariantDTO { size: string; stock: number; }
 export interface ProductDTO { id: string; slug: string; line: string; color: string; dotColor: string; tag: string | null; price: number; imageUrl: string; sizes: ProductVariantDTO[]; }
 export const SIZES = ['S', 'M', 'L', 'XL'] as const;
 export type Size = (typeof SIZES)[number];
+
+export interface DropDTO { targetAt: string; visible: boolean; title: string; teaser: string; }
+export interface ContentDTO {
+  marquee: string[]; heroKicker: string; heroTitle1: string; heroTitle2: string; heroSubtitle: string;
+  transferDiscountPct: number; bankAlias: string; bankCbu: string;
+  contactWhatsapp: string; contactInstagram: string; contactEmail: string; contactLocation: string;
+}
