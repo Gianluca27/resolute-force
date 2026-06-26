@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import type { ProductDTO } from '@resolute/shared';
 import { SIZES } from '@resolute/shared';
-import { prisma } from '../prisma';
+import { prisma } from '../prisma.js';
 
 type ProductWithVariants = Prisma.ProductGetPayload<{ include: { variants: true } }>;
 
