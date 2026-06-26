@@ -20,6 +20,6 @@ export async function listProducts(): Promise<ProductDTO[]> {
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductDTO | null> {
-  const p = await prisma.product.findUnique({ where: { slug }, include: { variants: true } });
+  const p = await prisma.product.findFirst({ where: { slug, active: true }, include: { variants: true } });
   return p ? toDTO(p) : null;
 }

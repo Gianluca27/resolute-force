@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { listProducts, getProductBySlug } from '../services/catalog';
+import { listProducts, getProductBySlug } from '../services/catalog.js';
 
 export const productsRouter = Router();
 
