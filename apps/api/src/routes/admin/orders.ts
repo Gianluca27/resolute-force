@@ -15,6 +15,10 @@ adminOrdersRouter.patch('/:id/status', async (req, res, next) => {
   try {
     const order = await prisma.order.findUnique({ where: { id: req.params.id } });
     if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
+    // Prevent reverting a paid/shipped order to pending (would allow double-decrement)
+    if (['paid', 'shipped'].includes(order.status) && p.data.status === 'pending') {
+      return res.status(422).json({ error: 'No se puede revertir un pedido pagado a pendiente' });
+    }
     if (p.data.status === 'paid') { await markPaidByOrderNo(order.orderNo, order.mpPaymentId ?? 'manual'); }
     else { await prisma.order.update({ where: { id: order.id }, data: { status: p.data.status } }); }
     res.json(await prisma.order.findUniqueOrThrow({ where: { id: order.id }, include: { items: true } }));

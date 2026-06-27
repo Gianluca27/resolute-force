@@ -13,7 +13,7 @@ export async function createCardPayment(i: {
   const res = await payment.create({
     body: {
       transaction_amount: i.amount, token: i.token, installments: i.installments,
-      payment_method_id: i.paymentMethodId, issuer_id: i.issuerId,
+      payment_method_id: i.paymentMethodId, issuer_id: i.issuerId ? Number(i.issuerId) : undefined,
       payer: { email: i.payerEmail, identification: i.identification },
       external_reference: i.orderNo, description: `Resolute Force ${i.orderNo}`,
       notification_url: `${env.PUBLIC_API_URL}/api/payments/webhook`,

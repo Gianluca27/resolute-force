@@ -29,6 +29,6 @@ adminProductsRouter.post('/:id/image', upload.single('image'), async (req, res, 
   if (!req.file) return res.status(400).json({ error: 'Falta la imagen' });
   try {
     const { url, publicId } = await uploadImage(req.file.buffer);
-    res.json(await setProductImage(req.params.id, url, publicId));
+    res.json(await setProductImage(req.params.id!, url, publicId));
   } catch (e) { next(e); }
 });
