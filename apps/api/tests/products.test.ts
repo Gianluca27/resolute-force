@@ -29,3 +29,16 @@ describe('GET /api/products/:slug', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('routing & global 404', () => {
+  it('path routing is case-sensitive — /API/products is not the catalog', async () => {
+    const res = await request(app).get('/API/products');
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'No encontrado' });
+  });
+  it('global notFound handler answers in Spanish', async () => {
+    const res = await request(app).get('/api/does-not-exist');
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'No encontrado' });
+  });
+});

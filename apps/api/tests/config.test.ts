@@ -22,7 +22,7 @@ describe('GET /api/content', () => {
     const res = await request(app).get('/api/content');
     expect(res.status).toBe(200);
     expect(res.body.marquee).toContain('Champion Mentality');
-    expect(res.body.contactInstagram).toBe('@resolute.force');
+    expect(res.body.contactInstagram).toBe('@resoluteforceok');
     expect(res.body.transferDiscountPct).toBe(10);
   });
 });

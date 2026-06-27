@@ -15,7 +15,7 @@ export default function CheckoutSuccess() {
         </div>
         <h1 className="m-0 font-display font-black text-[34px] uppercase">¡Pedido confirmado!</h1>
         <p className="text-mut leading-[1.6]">Tu orden <span className="text-gold font-semibold">{orderNo}</span> está en marcha. Te enviamos los detalles por email.</p>
-        <p className="font-display font-bold text-[18px] tracking-[0.08em] uppercase text-red">Stop at nothing 🔥</p>
+        <p className="font-display font-bold text-[18px] tracking-[0.08em] uppercase text-red">Stop at Nothing 🔥</p>
         <Link to="/" className="bg-tx text-bg no-underline font-display font-bold text-[15px] tracking-[0.12em] uppercase px-[26px] py-[13px] rounded-[2px] hover:bg-gold">Volver al inicio</Link>
       </div>
     </main>

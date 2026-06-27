@@ -13,7 +13,7 @@ describe('seed', () => {
     for (const p of products) expect(p.variants).toHaveLength(4);
     expect(products[0]!.color).toBe('Azul Marino');
     expect(products[0]!.tag).toBe('Más vendida');
-    expect(products[3]!.line).toBe('Stop At Nothing');
+    expect(products[3]!.line).toBe('Stop at Nothing');
   });
 
   it('creates singleton drop + content (6-item marquee, 10% transfer)', async () => {

@@ -90,7 +90,7 @@ Animation usages: `rf-marquee 32s linear infinite`, `rf-fade .25s ease both`, `r
 - Productos header: `La colección` / `Resolute '26`; footnote `Precios en pesos · 3 cuotas sin interés · 10% OFF pagando por transferencia`.
 - Historia stats: `2024` / `+5.000` / `100%`.
 - Próximos: kicker `Próximo lanzamiento`, title `Algo se está` / `forjando`, teaser `Un nuevo drop está entrando al fuego. Hoodies, oversize y la línea Pressure. Preparate.`, default target `2026-08-15T20:00:00-03:00`.
-- Contacto: WhatsApp `+54 341 321-3723` (`5493413213723`), Instagram `@resolute.force`, Email `resolutecontacto@gmail.com`, Ubicación `Buenos Aires · Envíos a todo el país`.
+- Contacto: WhatsApp `+54 341 321-3723` (`5493413213723`), Instagram `@resoluteforceok`, Email `resolutecontacto@gmail.com`, Ubicación `Buenos Aires · Envíos a todo el país`.
 - Checkout steps: `Tus datos` / `Forma de pago` / `Listo`; confirm `¡Pedido confirmado!`; tagline `Stop at nothing 🔥`.
 
 ---

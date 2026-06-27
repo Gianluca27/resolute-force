@@ -28,7 +28,7 @@ export default function Manifiesto() {
           <div className="flex flex-col mt-9">
             <Principle n="01" title="Champions think under pressure" sub="La mente decide antes que el cuerpo." color="#e4322b" />
             <Principle n="02" title="Discipline is the key" sub="La constancia construye lo que la motivación promete." color="#e8b53e" />
-            <div className="border-b border-line"><Principle n="03" title="Stop at nothing" sub="No hay plan B para los que van por todo." color="#f4f4f3" /></div>
+            <div className="border-b border-line"><Principle n="03" title="Stop at Nothing" sub="No hay plan B para los que van por todo." color="#f4f4f3" /></div>
           </div>
         </div>
       </div>

@@ -531,11 +531,11 @@ git add -A && git commit -m "feat(web): Nav (cart stub), Hero, Footer"
 import { render, screen } from '@testing-library/react';
 import Contacto from './Contacto';
 
-const content = { contactWhatsapp: '5493413213723', contactInstagram: '@resolute.force', contactEmail: 'resolutecontacto@gmail.com', contactLocation: 'Buenos Aires · Envíos a todo el país' } as any;
+const content = { contactWhatsapp: '5493413213723', contactInstagram: '@resoluteforceok', contactEmail: 'resolutecontacto@gmail.com', contactLocation: 'Buenos Aires · Envíos a todo el país' } as any;
 
 it('builds a wa.me link and shows the contact channels', () => {
   render(<Contacto content={content} />);
-  expect(screen.getByText('@resolute.force')).toBeInTheDocument();
+  expect(screen.getByText('@resoluteforceok')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /whatsapp/i })).toHaveAttribute('href', expect.stringContaining('wa.me/5493413213723'));
   expect(screen.getByText('resolutecontacto@gmail.com')).toBeInTheDocument();
 });
@@ -827,7 +827,7 @@ vi.mock('../lib/api', () => ({
   api: {
     products: () => Promise.resolve([{ id: 'p1', slug: 's', line: 'Champion Mentality', color: 'Negro', dotColor: '#101013', tag: null, price: 30000, imageUrl: '/assets/tile-black.png', sizes: [{ size: 'M', stock: 5 }] }]),
     drop: () => Promise.resolve({ targetAt: '2026-08-15T20:00:00-03:00', visible: true, title: 'Algo se está forjando', teaser: 'x' }),
-    content: () => Promise.resolve({ marquee: ['Champion Mentality'], heroKicker: 'Est. 2024', heroTitle1: 'Champion', heroTitle2: 'Mentality', heroSubtitle: 'Sub', transferDiscountPct: 10, bankAlias: '', bankCbu: '', contactWhatsapp: '549', contactInstagram: '@resolute.force', contactEmail: 'a@b.com', contactLocation: 'BA' }),
+    content: () => Promise.resolve({ marquee: ['Champion Mentality'], heroKicker: 'Est. 2024', heroTitle1: 'Champion', heroTitle2: 'Mentality', heroSubtitle: 'Sub', transferDiscountPct: 10, bankAlias: '', bankCbu: '', contactWhatsapp: '549', contactInstagram: '@resoluteforceok', contactEmail: 'a@b.com', contactLocation: 'BA' }),
   },
 }));
 

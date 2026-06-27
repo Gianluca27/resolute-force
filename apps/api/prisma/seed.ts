@@ -9,7 +9,7 @@ const products = [
   { slug: 'champion-mentality-azul-marino', line: 'Champion Mentality', color: 'Azul Marino', dotColor: '#1f2a44', tag: 'Más vendida' as string | null, image: '/assets/tile-navy.png', sortOrder: 0 },
   { slug: 'champion-mentality-negro', line: 'Champion Mentality', color: 'Negro', dotColor: '#101013', tag: null, image: '/assets/tile-black.png', sortOrder: 1 },
   { slug: 'champion-mentality-verde-militar', line: 'Champion Mentality', color: 'Verde Militar', dotColor: '#4a5235', tag: null, image: '/assets/tile-olive.png', sortOrder: 2 },
-  { slug: 'stop-at-nothing-blanco', line: 'Stop At Nothing', color: 'Blanco', dotColor: '#e9e9ea', tag: 'Nuevo', image: '/assets/tile-white.png', sortOrder: 3 },
+  { slug: 'stop-at-nothing-blanco', line: 'Stop at Nothing', color: 'Blanco', dotColor: '#e9e9ea', tag: 'Nuevo', image: '/assets/tile-white.png', sortOrder: 3 },
 ];
 
 export async function seed() {
@@ -52,9 +52,9 @@ export async function seed() {
       bankAlias: '',
       bankCbu: '',
       contactWhatsapp: '5493413213723',
-      contactInstagram: '@resolute.force',
+      contactInstagram: '@resoluteforceok',
       contactEmail: 'resolutecontacto@gmail.com',
-      contactLocation: 'Buenos Aires · Envíos a todo el país',
+      contactLocation: 'Rosario · Envíos a todo el país',
     },
   });
 

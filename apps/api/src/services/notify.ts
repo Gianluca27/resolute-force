@@ -37,7 +37,7 @@ async function notifyCustomer(o: OrderWithItems, bank?: { bankAlias: string; ban
     <p>Orden <b>${escapeHtml(o.orderNo)}</b> · Total <b>${escapeHtml(fmt(o.total))}</b> · Pago: ${escapeHtml(o.paymentMethod)}</p>
     ${bankBlock}
     ${itemsTable(o)}
-    <p style="font-weight:700;text-transform:uppercase">Champion Mentality. Stop at nothing 🔥</p>`;
+    <p style="font-weight:700;text-transform:uppercase">Champion Mentality. Stop at Nothing 🔥</p>`;
   await sendMail({ to: o.customerEmail, subject: `Resolute Force — Pedido ${o.orderNo}`, html });
 }
 

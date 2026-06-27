@@ -157,7 +157,7 @@ describe('seed', () => {
     for (const p of products) expect(p.variants).toHaveLength(4);
     expect(products[0]!.color).toBe('Azul Marino');
     expect(products[0]!.tag).toBe('Más vendida');
-    expect(products[3]!.line).toBe('Stop At Nothing');
+    expect(products[3]!.line).toBe('Stop at Nothing');
   });
 
   it('creates singleton drop + content (6-item marquee, 10% transfer)', async () => {
@@ -192,7 +192,7 @@ const products = [
   { slug: 'champion-mentality-azul-marino', line: 'Champion Mentality', color: 'Azul Marino', dotColor: '#1f2a44', tag: 'Más vendida' as string | null, image: '/assets/tile-navy.png', sortOrder: 0 },
   { slug: 'champion-mentality-negro', line: 'Champion Mentality', color: 'Negro', dotColor: '#101013', tag: null, image: '/assets/tile-black.png', sortOrder: 1 },
   { slug: 'champion-mentality-verde-militar', line: 'Champion Mentality', color: 'Verde Militar', dotColor: '#4a5235', tag: null, image: '/assets/tile-olive.png', sortOrder: 2 },
-  { slug: 'stop-at-nothing-blanco', line: 'Stop At Nothing', color: 'Blanco', dotColor: '#e9e9ea', tag: 'Nuevo', image: '/assets/tile-white.png', sortOrder: 3 },
+  { slug: 'stop-at-nothing-blanco', line: 'Stop at Nothing', color: 'Blanco', dotColor: '#e9e9ea', tag: 'Nuevo', image: '/assets/tile-white.png', sortOrder: 3 },
 ];
 
 export async function seed() {
@@ -234,7 +234,7 @@ export async function seed() {
       bankAlias: '',
       bankCbu: '',
       contactWhatsapp: '5493413213723',
-      contactInstagram: '@resolute.force',
+      contactInstagram: '@resoluteforceok',
       contactEmail: 'resolutecontacto@gmail.com',
       contactLocation: 'Buenos Aires · Envíos a todo el país',
     },
@@ -480,7 +480,7 @@ describe('GET /api/content', () => {
     const res = await request(app).get('/api/content');
     expect(res.status).toBe(200);
     expect(res.body.marquee).toContain('Champion Mentality');
-    expect(res.body.contactInstagram).toBe('@resolute.force');
+    expect(res.body.contactInstagram).toBe('@resoluteforceok');
     expect(res.body.transferDiscountPct).toBe(10);
   });
 });

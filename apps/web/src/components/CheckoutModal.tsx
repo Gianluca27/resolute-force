@@ -152,7 +152,7 @@ export default function CheckoutModal() {
                 <Row label="Pago" value={confirmation.pay} />
                 <div className="flex justify-between items-baseline pt-[9px] border-t border-line"><span className="text-mut">Total</span><span className="font-display font-black text-[24px]">{money(confirmation.total)}</span></div>
               </div>
-              <p className="m-0 font-display font-bold text-[18px] tracking-[0.08em] uppercase text-red">Stop at nothing 🔥</p>
+              <p className="m-0 font-display font-bold text-[18px] tracking-[0.08em] uppercase text-red">Stop at Nothing 🔥</p>
               <button onClick={close} className="w-full bg-tx text-bg border-0 rounded-[2px] p-[15px] cursor-pointer font-display font-bold text-[16px] tracking-[0.13em] uppercase hover:bg-gold mt-1">Seguí entrenando</button>
             </div>
           )}

@@ -15,6 +15,8 @@ import { trackRouter } from './routes/track.js';
 
 export function createApp() {
   const app = express();
+  // Path routing is case-sensitive (slugs already are) — `/API/products` must not alias `/api/products`.
+  app.set('case sensitive routing', true);
   app.use(helmet());
   app.use(cors({ origin: env.PUBLIC_WEB_URL, credentials: true }));
   app.use(express.json({ limit: '1mb' }));
