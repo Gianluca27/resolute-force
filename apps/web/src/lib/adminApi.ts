@@ -3,7 +3,7 @@ import { useAuth } from '../store/auth';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
-function auth() {
+function auth(): Record<string, string> {
   const t = useAuth.getState().token;
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
