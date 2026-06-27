@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { pathToFileURL } from 'node:url';
 import { prisma } from '../src/prisma';
 import bcrypt from 'bcryptjs';

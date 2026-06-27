@@ -12,3 +12,6 @@ coverage/
 *.log
 .superpowers/
 *.tsbuildinfo
+.playwright-mcp/
+.claude/
+docs/qa/reports/
