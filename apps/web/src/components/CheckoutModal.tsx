@@ -8,6 +8,8 @@ import CardBrick, { type CardFormData } from './payment/CardBrick';
 import WalletButton from './payment/WalletButton';
 
 type PayMethod = 'transfer' | 'card' | 'wallet';
+// es-AR labels for the payment-method key shown on the confirmation screen. H-04.
+const PAY_LABELS: Record<PayMethod, string> = { transfer: 'Transferencia', card: 'Tarjeta', wallet: 'Mercado Pago' };
 interface Confirmation { orderNo: string; total: number; count: number; pay: PayMethod; name: string; bankAlias?: string; bankCbu?: string; }
 
 const inputCls = 'bg-card border border-line2 rounded-[3px] text-tx px-[14px] py-[13px] text-[15px] outline-none transition focus:border-gold';
@@ -112,9 +114,9 @@ export default function CheckoutModal() {
           {step === 1 && q && (
             <div className="flex flex-col gap-[14px]">
               <div className="font-display text-[12.5px] tracking-[0.14em] uppercase text-mut">Elegí cómo pagar</div>
-              <PayOption active={method === 'transfer'} onClick={() => { setMethod('transfer'); setPreferenceId(null); }} title="Transferencia" sub="Te enviamos los datos por email" badge={q.transferDiscount > 0 ? `${Math.round((q.transferDiscount / q.subtotal) * 100)}% OFF` : undefined} />
-              <PayOption active={method === 'card'} onClick={() => { setMethod('card'); setPreferenceId(null); }} title="Tarjeta" sub="Hasta 3 cuotas sin interés" />
-              <PayOption active={method === 'wallet'} onClick={() => { setMethod('wallet'); setPreferenceId(null); }} title="Mercado Pago" sub="Pagá con tu cuenta de MercadoPago" />
+              <PayOption active={method === 'transfer'} onClick={() => { setMethod('transfer'); setPreferenceId(null); setErr(null); }} title="Transferencia" sub="Te enviamos los datos por email" badge={q.transferDiscount > 0 ? `${Math.round((q.transferDiscount / q.subtotal) * 100)}% OFF` : undefined} />
+              <PayOption active={method === 'card'} onClick={() => { setMethod('card'); setPreferenceId(null); setErr(null); }} title="Tarjeta" sub="Hasta 3 cuotas sin interés" />
+              <PayOption active={method === 'wallet'} onClick={() => { setMethod('wallet'); setPreferenceId(null); setErr(null); }} title="Mercado Pago" sub="Pagá con tu cuenta de MercadoPago" />
 
               <div className="flex flex-col gap-2 mt-[6px] pt-[14px] border-t border-line">
                 <Row label="Subtotal" value={money(q.subtotal)} />
@@ -131,7 +133,7 @@ export default function CheckoutModal() {
 
               {method === 'transfer' && (
                 <div className="flex gap-[10px] mt-1">
-                  <button onClick={() => setStep(0)} className="shrink-0 bg-transparent text-tx border border-line2 rounded-[2px] px-5 py-4 cursor-pointer font-display font-bold text-[15px] tracking-[0.1em] uppercase hover:border-tx">Volver</button>
+                  <button onClick={() => { setStep(0); setErr(null); }} className="shrink-0 bg-transparent text-tx border border-line2 rounded-[2px] px-5 py-4 cursor-pointer font-display font-bold text-[15px] tracking-[0.1em] uppercase hover:border-tx">Volver</button>
                   <button disabled={busy} onClick={confirmTransfer} className="flex-1 bg-red text-white border-0 rounded-[2px] p-4 cursor-pointer font-display font-bold text-[16px] tracking-[0.13em] uppercase hover:bg-redd disabled:opacity-60">Confirmar pedido</button>
                 </div>
               )}
@@ -159,7 +161,7 @@ export default function CheckoutModal() {
               <div className="w-full bg-card border border-line rounded-[4px] px-[18px] py-4 flex flex-col gap-[9px] mt-1">
                 <Row label="Orden" value={confirmation.orderNo} />
                 <Row label="Artículos" value={String(confirmation.count)} />
-                <Row label="Pago" value={confirmation.pay} />
+                <Row label="Pago" value={PAY_LABELS[confirmation.pay]} />
                 <div className="flex justify-between items-baseline pt-[9px] border-t border-line"><span className="text-mut">Total</span><span className="font-display font-black text-[24px]">{money(confirmation.total)}</span></div>
               </div>
               <p className="m-0 font-display font-bold text-[18px] tracking-[0.08em] uppercase text-red">Stop at Nothing 🔥</p>
