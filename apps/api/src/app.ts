@@ -10,6 +10,7 @@ import { checkoutRouter } from './routes/checkout.js';
 import { paymentsRouter } from './routes/payments.js';
 import { ordersRouter } from './routes/orders.js';
 import { adminRouter } from './routes/admin/index.js';
+import { trackRouter } from './routes/track.js';
 
 export function createApp() {
   const app = express();
@@ -25,6 +26,7 @@ export function createApp() {
   app.use('/api/payments', paymentsRouter);
   app.use('/api/orders', ordersRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/api/track', trackRouter);
 
   app.use(notFound);
   app.use(errorHandler);

@@ -6,6 +6,7 @@ import { requireAdmin, type AuthedRequest } from '../../middleware/auth.js';
 import { adminProductsRouter } from './products.js';
 import { adminOrdersRouter } from './orders.js';
 import { adminConfigRouter } from './config.js';
+import { getMetrics } from '../../services/metrics.js';
 
 export const adminRouter = Router();
 
@@ -25,5 +26,4 @@ adminRouter.use('/products', adminProductsRouter);
 adminRouter.use('/orders', adminOrdersRouter);
 adminRouter.use('/config', adminConfigRouter);
 
-// Wired in later tasks:
-// adminRouter.get('/metrics', metricsHandler);          // Task 4
+adminRouter.get('/metrics', async (_req, res, next) => { try { res.json(await getMetrics()); } catch (e) { next(e); } });
