@@ -1,7 +1,7 @@
 import type { ProductDTO } from '@resolute/shared';
 import ProductCard from './ProductCard';
 
-export default function Productos({ products, onAdd }: { products: ProductDTO[]; onAdd: (p: ProductDTO, size: string) => void }) {
+export default function Productos({ products, onAdd, transferDiscountPct = 10 }: { products: ProductDTO[]; onAdd: (p: ProductDTO, size: string) => void; transferDiscountPct?: number }) {
   return (
     <section id="productos" data-screen-label="Productos" className="scroll-mt-20 px-[clamp(18px,5vw,64px)] py-[clamp(64px,10vh,120px)] max-w-[1280px] mx-auto">
       <div className="flex flex-wrap items-end justify-between gap-5 mb-[44px]">
@@ -14,7 +14,7 @@ export default function Productos({ products, onAdd }: { products: ProductDTO[];
       <div className="grid gap-[18px] [grid-template-columns:repeat(auto-fill,minmax(258px,1fr))]">
         {products.map((p) => <ProductCard key={p.id} product={p} onAdd={onAdd} />)}
       </div>
-      <p className="text-center text-mut text-[14px] mt-[34px] font-display tracking-[0.1em] uppercase">Precios en pesos · 3 cuotas sin interés · 10% OFF pagando por transferencia</p>
+      <p className="text-center text-mut text-[14px] mt-[34px] font-display tracking-[0.1em] uppercase">Precios en pesos · 3 cuotas sin interés{transferDiscountPct > 0 ? ` · ${transferDiscountPct}% OFF pagando por transferencia` : ''}</p>
     </section>
   );
 }

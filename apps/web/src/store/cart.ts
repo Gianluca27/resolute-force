@@ -1,16 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ProductDTO } from '@resolute/shared';
+import type { ProductDTO, CustomerInput } from '@resolute/shared';
 
 export interface CartItem {
   key: string; productId: string; slug: string; line: string; color: string;
   size: string; price: number; imageUrl: string; qty: number;
 }
 
+const emptyCheckoutForm: CustomerInput = { nombre: '', email: '', tel: '', dir: '', ciudad: '' };
+
 interface CartStore {
   items: CartItem[];
   open: boolean;
   checkoutOpen: boolean;
+  // Lives in the store (not in CheckoutModal) so typed data survives the modal unmounting on close (H-01).
+  checkoutForm: CustomerInput;
   add: (p: ProductDTO, size: string) => void;
   inc: (key: string) => void;
   dec: (key: string) => void;
@@ -19,13 +23,14 @@ interface CartStore {
   reconcile: (products: ProductDTO[]) => void;
   setOpen: (open: boolean) => void;
   setCheckoutOpen: (open: boolean) => void;
+  setCheckoutForm: (form: CustomerInput) => void;
   startCheckout: () => boolean;
 }
 
 export const useCart = create<CartStore>()(
   persist(
     (set, get) => ({
-      items: [], open: false, checkoutOpen: false,
+      items: [], open: false, checkoutOpen: false, checkoutForm: emptyCheckoutForm,
       add: (p, size) =>
         set((s) => {
           const key = `${p.id}-${size}`;
@@ -38,7 +43,8 @@ export const useCart = create<CartStore>()(
       inc: (key) => set((s) => ({ items: s.items.map((x) => (x.key === key ? { ...x, qty: x.qty + 1 } : x)) })),
       dec: (key) => set((s) => ({ items: s.items.flatMap((x) => (x.key === key ? (x.qty > 1 ? [{ ...x, qty: x.qty - 1 }] : []) : [x])) })),
       remove: (key) => set((s) => ({ items: s.items.filter((x) => x.key !== key) })),
-      clear: () => set({ items: [] }),
+      // Clears the cart and the checkout form (e.g. after a completed order) so the next purchase starts fresh.
+      clear: () => set({ items: [], checkoutForm: emptyCheckoutForm }),
       // Refresh persisted line prices/labels from the latest catalog; drop products that no longer exist.
       reconcile: (products) =>
         set((s) => {
@@ -51,6 +57,7 @@ export const useCart = create<CartStore>()(
         }),
       setOpen: (open) => set({ open }),
       setCheckoutOpen: (checkoutOpen) => set({ checkoutOpen }),
+      setCheckoutForm: (checkoutForm) => set({ checkoutForm }),
       startCheckout: () => {
         if (get().items.length === 0) return false;
         set({ open: false, checkoutOpen: true });
