@@ -34,6 +34,7 @@ export async function createProduct(input: ProductInput): Promise<AdminProductDT
 export async function updateProduct(id: string, input: ProductInput): Promise<AdminProductDTO> {
   await prisma.$transaction(async (tx) => {
     await tx.product.update({ where: { id }, data: { slug: input.slug, line: input.line, color: input.color, dotColor: input.dotColor, tag: input.tag ?? null, price: input.price, active: input.active, sortOrder: input.sortOrder } });
+    await tx.variant.deleteMany({ where: { productId: id, size: { notIn: input.sizes.map((s) => s.size) } } });
     for (const s of input.sizes) {
       await tx.variant.upsert({ where: { productId_size: { productId: id, size: s.size } }, update: { stock: s.stock }, create: { productId: id, size: s.size, stock: s.stock } });
     }
