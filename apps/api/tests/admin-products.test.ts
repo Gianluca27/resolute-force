@@ -40,4 +40,12 @@ describe('admin products', () => {
 
     expect((await request(app).delete(`/api/admin/products/${id}`).set(authHeader())).body.ok).toBe(true);
   });
+
+  it('rejects a non-image file upload', async () => {
+    const create = await request(app).post('/api/admin/products').set(authHeader()).send({
+      slug: 'img-guard', line: 'L', color: 'C', dotColor: '#101013', price: 1000, active: true, sortOrder: 0, sizes: [{ size: 'M', stock: 1 }],
+    });
+    const res = await request(app).post(`/api/admin/products/${create.body.id}/image`).set(authHeader()).attach('image', Buffer.from('not an image'), 'malware.txt');
+    expect(res.status).toBe(400);
+  });
 });

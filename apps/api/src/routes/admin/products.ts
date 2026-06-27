@@ -4,7 +4,12 @@ import { productInputSchema } from '@resolute/shared';
 import { listAll, createProduct, updateProduct, deleteProduct, setProductImage } from '../../services/adminProducts.js';
 import { uploadImage } from '../../lib/cloudinary.js';
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 6 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 6 * 1024 * 1024 },
+  // Only accept real image uploads — reject anything else before it reaches Cloudinary.
+  fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith('image/')),
+});
 export const adminProductsRouter = Router();
 
 adminProductsRouter.get('/', async (_req, res, next) => { try { res.json(await listAll()); } catch (e) { next(e); } });
@@ -26,7 +31,7 @@ adminProductsRouter.delete('/:id', async (req, res, next) => {
 });
 
 adminProductsRouter.post('/:id/image', upload.single('image'), async (req, res, next) => {
-  if (!req.file) return res.status(400).json({ error: 'Falta la imagen' });
+  if (!req.file) return res.status(400).json({ error: 'Imagen inválida o ausente (solo se aceptan imágenes)' });
   try {
     const { url, publicId } = await uploadImage(req.file.buffer);
     res.json(await setProductImage(req.params.id!, url, publicId));

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../prisma.js';
-import { markPaidByOrderNo } from '../../services/orders.js';
+import { changeOrderStatus, InvalidStatusTransition, OutOfStockError } from '../../services/orders.js';
 
 export const adminOrdersRouter = Router();
 
@@ -13,14 +13,12 @@ const statusSchema = z.object({ status: z.enum(['pending', 'paid', 'shipped', 'c
 adminOrdersRouter.patch('/:id/status', async (req, res, next) => {
   const p = statusSchema.safeParse(req.body); if (!p.success) return res.status(400).json({ error: 'Estado inválido' });
   try {
-    const order = await prisma.order.findUnique({ where: { id: req.params.id } });
+    const order = await changeOrderStatus(req.params.id!, p.data.status);
     if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
-    // Prevent reverting a paid/shipped order to pending (would allow double-decrement)
-    if (['paid', 'shipped'].includes(order.status) && p.data.status === 'pending') {
-      return res.status(422).json({ error: 'No se puede revertir un pedido pagado a pendiente' });
-    }
-    if (p.data.status === 'paid') { await markPaidByOrderNo(order.orderNo, order.mpPaymentId ?? 'manual'); }
-    else { await prisma.order.update({ where: { id: order.id }, data: { status: p.data.status } }); }
-    res.json(await prisma.order.findUniqueOrThrow({ where: { id: order.id }, include: { items: true } }));
-  } catch (e) { next(e); }
+    res.json(order);
+  } catch (e) {
+    if (e instanceof InvalidStatusTransition) return res.status(422).json({ error: e.message });
+    if (e instanceof OutOfStockError) return res.status(409).json({ error: e.message });
+    next(e);
+  }
 });

@@ -36,11 +36,14 @@ export async function getMetrics(nowMs = Date.now()): Promise<Metrics> {
     revenueLast30.push({ date, total });
   }
 
-  const variants = await prisma.variant.findMany({ where: { stock: { lte: 5 } }, include: { product: true } });
+  const variants = await prisma.variant.findMany({ where: { stock: { lte: 5 }, product: { active: true } }, include: { product: true } });
   const lowStock = variants.map((v) => ({ line: v.product.line, color: v.product.color, size: v.size, stock: v.stock }));
 
-  const visits30 = await prisma.visit.count({ where: { createdAt: { gte: new Date(nowMs - 30 * dayMs) } } });
-  const conversionRate = visits30 ? Math.round((paid.length / visits30) * 1000) / 10 : 0;
+  const windowStart = nowMs - 30 * dayMs;
+  const visits30 = await prisma.visit.count({ where: { createdAt: { gte: new Date(windowStart) } } });
+  // Conversion must compare like-for-like windows: paid orders in the last 30 days ÷ visits in the last 30 days.
+  const paidLast30 = paid.filter((o) => o.createdAt.getTime() >= windowStart).length;
+  const conversionRate = visits30 ? Math.round((paidLast30 / visits30) * 1000) / 10 : 0;
 
   return { revenue, ordersByStatus, unitsSold, avgOrderValue, topProducts, revenueLast30, lowStock, visits30, conversionRate };
 }

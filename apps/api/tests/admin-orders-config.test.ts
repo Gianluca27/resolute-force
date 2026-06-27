@@ -24,6 +24,32 @@ it('lists orders and marks a transfer order paid (decrementing stock)', async ()
   expect(v.stock).toBe(23);
 });
 
+it('restocks inventory when a paid order is cancelled', async () => {
+  const navyId = (await prisma.product.findUniqueOrThrow({ where: { slug: 'champion-mentality-azul-marino' } })).id;
+  const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 2 }], customer, method: 'transfer' });
+  await request(app).patch(`/api/admin/orders/${order.id}/status`).set(authHeader()).send({ status: 'paid' });
+  await request(app).patch(`/api/admin/orders/${order.id}/status`).set(authHeader()).send({ status: 'cancelled' });
+  const v = await prisma.variant.findFirstOrThrow({ where: { productId: navyId, size: 'M' } });
+  expect(v.stock).toBe(25); // 25 − 2 (paid) + 2 (restocked on cancel)
+});
+
+it('decrements stock when an order is moved straight to shipped', async () => {
+  const navyId = (await prisma.product.findUniqueOrThrow({ where: { slug: 'champion-mentality-azul-marino' } })).id;
+  const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 2 }], customer, method: 'transfer' });
+  const res = await request(app).patch(`/api/admin/orders/${order.id}/status`).set(authHeader()).send({ status: 'shipped' });
+  expect(res.body.status).toBe('shipped');
+  const v = await prisma.variant.findFirstOrThrow({ where: { productId: navyId, size: 'M' } });
+  expect(v.stock).toBe(23);
+});
+
+it('rejects reverting a paid order to pending (422) and 404s an unknown order', async () => {
+  const navyId = (await prisma.product.findUniqueOrThrow({ where: { slug: 'champion-mentality-azul-marino' } })).id;
+  const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer, method: 'transfer' });
+  await request(app).patch(`/api/admin/orders/${order.id}/status`).set(authHeader()).send({ status: 'paid' });
+  expect((await request(app).patch(`/api/admin/orders/${order.id}/status`).set(authHeader()).send({ status: 'pending' })).status).toBe(422);
+  expect((await request(app).patch('/api/admin/orders/does-not-exist/status').set(authHeader()).send({ status: 'paid' })).status).toBe(404);
+});
+
 it('updates drop and content config', async () => {
   const drop = await request(app).put('/api/admin/config/drop').set(authHeader()).send({ targetAt: '2027-01-01T00:00:00-03:00', visible: false, title: 'X', teaser: 'Y' });
   expect(drop.body.visible).toBe(false);
