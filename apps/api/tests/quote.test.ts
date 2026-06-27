@@ -24,6 +24,14 @@ describe('POST /api/checkout/quote', () => {
     expect(res.body.lines[0].unitPrice).toBe(30000);
   });
 
+  it('ignores a forged client price and re-prices strictly from the DB', async () => {
+    // Attacker sends price:1 / unitPrice:1 — the server must discard them and use the catalog price.
+    const res = await request(app).post('/api/checkout/quote').send({ items: [{ productId: navyId, size: 'M', qty: 1, price: 1, unitPrice: 1 }] });
+    expect(res.status).toBe(200);
+    expect(res.body.subtotal).toBe(30000);
+    expect(res.body.lines[0].unitPrice).toBe(30000);
+  });
+
   it('400s on a malformed body', async () => {
     const res = await request(app).post('/api/checkout/quote').send({ items: [] });
     expect(res.status).toBe(400);

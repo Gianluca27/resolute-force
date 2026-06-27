@@ -2,7 +2,7 @@ import { beforeEach, describe, it, expect } from 'vitest';
 import { seed } from '../prisma/seed.js';
 import { resetDb } from './helpers/db.js';
 import { prisma } from '../src/prisma.js';
-import { createOrder, markPaidByOrderNo } from '../src/services/orders.js';
+import { createOrder, markPaidByOrderNo, OutOfStockError } from '../src/services/orders.js';
 
 const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', dir: 'Calle 1', ciudad: 'CABA' };
 let navyId = '';
@@ -25,6 +25,11 @@ describe('createOrder', () => {
     const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer, method: 'transfer' });
     expect(order.total).toBe(27000);
     expect(order.discount).toBe(3000);
+  });
+
+  it('stores an empty phone as null so the admin "—" fallback works', async () => {
+    const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer: { ...customer, tel: '' }, method: 'transfer' });
+    expect(order.customerPhone).toBeNull();
   });
 });
 
@@ -50,5 +55,14 @@ describe('markPaidByOrderNo', () => {
     // Stock must still be 0 (not double-decremented)
     const v = await prisma.variant.findFirstOrThrow({ where: { productId: navyId, size: 'M' } });
     expect(v.stock).toBe(0);
+  });
+
+  it('throws OutOfStockError yet persists mpPaymentId so the charge stays recoverable', async () => {
+    const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 5 }], customer, method: 'card' });
+    await prisma.variant.updateMany({ where: { productId: navyId, size: 'M' }, data: { stock: 0 } });
+    await expect(markPaidByOrderNo(order.orderNo, 'PAY-RECOVER')).rejects.toBeInstanceOf(OutOfStockError);
+    const reread = await prisma.order.findUniqueOrThrow({ where: { orderNo: order.orderNo } });
+    expect(reread.status).toBe('pending');
+    expect(reread.mpPaymentId).toBe('PAY-RECOVER'); // not lost to the rollback
   });
 });

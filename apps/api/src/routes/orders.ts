@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { cartLineSchema, customerSchema } from '@resolute/shared';
 import { createOrder } from '../services/orders.js';
+import { QuoteError } from '../services/quote.js';
 import { prisma } from '../prisma.js';
 
 export const ordersRouter = Router();
@@ -19,6 +20,8 @@ ordersRouter.post('/transfer', async (req, res) => {
       name: order.customerName, bankAlias: content?.bankAlias ?? '', bankCbu: content?.bankCbu ?? '',
     });
   } catch (e) {
-    return res.status(409).json({ error: e instanceof Error ? e.message : 'No se pudo crear el pedido' });
+    // Out-of-stock / invalid catalog state → 409; anything unexpected is a real 500 (don't mask it).
+    if (e instanceof QuoteError) return res.status(409).json({ error: e.message });
+    return res.status(500).json({ error: 'No se pudo crear el pedido' });
   }
 });

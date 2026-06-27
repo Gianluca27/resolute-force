@@ -1,10 +1,11 @@
-import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
+import { MercadoPagoConfig, Payment, Preference, PaymentRefund } from 'mercadopago';
 import type { QuoteLine, CustomerInput } from '@resolute/shared';
 import { env } from '../env.js';
 
 const client = new MercadoPagoConfig({ accessToken: env.MP_ACCESS_TOKEN });
 const payment = new Payment(client);
 const preference = new Preference(client);
+const paymentRefund = new PaymentRefund(client);
 
 export async function createCardPayment(i: {
   amount: number; token: string; installments: number; paymentMethodId: string; issuerId?: string;
@@ -39,4 +40,9 @@ export async function createPreference(i: { orderNo: string; customer: CustomerI
 export async function getPayment(id: string) {
   const res = await payment.get({ id });
   return { id: res.id, status: res.status, externalReference: res.external_reference };
+}
+
+/** Full refund of a captured payment — used when stock can't be reserved after approval. */
+export async function refundPayment(paymentId: string): Promise<void> {
+  await paymentRefund.create({ payment_id: Number(paymentId), body: {} });
 }
