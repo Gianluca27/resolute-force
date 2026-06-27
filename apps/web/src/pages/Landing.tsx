@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useProducts, useDrop, useContent } from '../hooks/useCatalog';
 import { useCart, cartCount } from '../store/cart';
 import { useToast } from '../store/toast';
@@ -15,6 +16,15 @@ import CheckoutModal from '../components/CheckoutModal';
 import Toast from '../components/Toast';
 
 export default function Landing() {
+  useEffect(() => {
+    const base = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
+    fetch(`${base}/api/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: '/' }),
+    }).catch(() => {});
+  }, []);
+
   const products = useProducts();
   const drop = useDrop();
   const content = useContent();

@@ -15,6 +15,11 @@ const schema = z.object({
   SMTP_PASS: z.string().default(''),
   MAIL_FROM: z.string().default('Resolute Force <no-reply@resoluteforce.com>'),
   ADMIN_NOTIFY_EMAIL: z.string().default(''),
+  ADMIN_EMAIL: z.string().default('admin@resoluteforce.com'),
+  ADMIN_PASSWORD: z.string().default(''),
+  CLOUDINARY_CLOUD_NAME: z.string().default(''),
+  CLOUDINARY_API_KEY: z.string().default(''),
+  CLOUDINARY_API_SECRET: z.string().default(''),
 });
 
 export const env = schema.parse(process.env);

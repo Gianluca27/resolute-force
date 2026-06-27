@@ -1,5 +1,7 @@
 import { pathToFileURL } from 'node:url';
 import { prisma } from '../src/prisma';
+import bcrypt from 'bcryptjs';
+import { env } from '../src/env';
 
 const SIZES = ['S', 'M', 'L', 'XL'] as const;
 
@@ -54,6 +56,11 @@ export async function seed() {
       contactLocation: 'Buenos Aires · Envíos a todo el país',
     },
   });
+
+  if (env.ADMIN_PASSWORD) {
+    const passwordHash = await bcrypt.hash(env.ADMIN_PASSWORD, 10);
+    await prisma.adminUser.upsert({ where: { email: env.ADMIN_EMAIL }, update: { passwordHash }, create: { email: env.ADMIN_EMAIL, passwordHash } });
+  }
 }
 
 const isMain = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

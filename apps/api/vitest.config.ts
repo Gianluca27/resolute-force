@@ -5,7 +5,7 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
     globalSetup: ['./tests/globalSetup.ts'],
-    env: { DATABASE_URL: 'file:./test.db', NODE_ENV: 'test', ADMIN_NOTIFY_EMAIL: 'admin@test.com' },
+    env: { DATABASE_URL: 'file:./test.db', NODE_ENV: 'test', ADMIN_NOTIFY_EMAIL: 'admin@test.com', ADMIN_EMAIL: 'admin@test.com', ADMIN_PASSWORD: 'secret123' },
     fileParallelism: false,
   },
 });
