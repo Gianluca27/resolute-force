@@ -7,16 +7,26 @@ const inputCls = 'bg-card border border-line2 rounded-[3px] text-tx px-[14px] py
 export default function ContentConfig() {
   const [c, setC] = useState<ContentDTO | null>(null);
   const [msg, setMsg] = useState('');
-  useEffect(() => { adminApi.getContent().then(setC).catch(() => {}); }, []);
-  if (!c) return <div className="text-mut">Cargando…</div>;
+  const [err, setErr] = useState('');
+  useEffect(() => { adminApi.getContent().then(setC).catch(() => setErr('No se pudo cargar el contenido')); }, []);
+  if (!c) return <div className="text-mut">{err || 'Cargando…'}</div>;
   const f = (k: keyof ContentDTO) => (e: React.ChangeEvent<HTMLInputElement>) => setC({ ...c, [k]: e.target.value } as ContentDTO);
   return (
-    <form onSubmit={async (e) => { e.preventDefault(); await adminApi.putContent(c); setMsg('Guardado ✓'); }} className="flex flex-col gap-3 max-w-[560px]">
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault(); setErr(''); setMsg('');
+        try { await adminApi.putContent(c); setMsg('Guardado ✓'); }
+        catch (e2) { setErr(e2 instanceof Error ? e2.message : 'No se pudo guardar'); }
+      }}
+      className="flex flex-col gap-3 max-w-[560px]"
+    >
       <h1 className="font-display font-black text-[30px] uppercase">Contenido del sitio</h1>
       {msg && <div className="text-gold text-[13px] uppercase font-display">{msg}</div>}
+      {err && <div className="text-red text-[13px] uppercase font-display">{err}</div>}
       <label className="text-mut text-[12px] uppercase font-display">Marquee (una frase por línea)</label>
-      <textarea className={inputCls} rows={4} value={c.marquee.join('\n')} onChange={(e) => setC({ ...c, marquee: e.target.value.split('\n').filter(Boolean) })} />
-      <input className={inputCls} value={c.heroTitle1} onChange={f('heroTitle1')} placeholder="Hero línea 1" />
+      <textarea aria-label="Marquee" className={inputCls} rows={4} value={c.marquee.join('\n')} onChange={(e) => setC({ ...c, marquee: e.target.value.split('\n').filter(Boolean) })} />
+      <input aria-label="Hero kicker" className={inputCls} value={c.heroKicker} onChange={f('heroKicker')} placeholder="Hero kicker (Est. 2024 · …)" />
+      <input aria-label="Hero línea 1" className={inputCls} value={c.heroTitle1} onChange={f('heroTitle1')} placeholder="Hero línea 1" />
       <input className={inputCls} value={c.heroTitle2} onChange={f('heroTitle2')} placeholder="Hero línea 2" />
       <input className={inputCls} value={c.heroSubtitle} onChange={f('heroSubtitle')} placeholder="Hero subtítulo" />
       <label className="text-mut text-[12px] uppercase font-display">Descuento transferencia (%)</label>

@@ -19,6 +19,7 @@ export default function ProductForm() {
     adminApi.products().then((all) => { const p = all.find((x) => x.id === id); if (p) setForm({ slug: p.slug, line: p.line, color: p.color, dotColor: p.dotColor, tag: p.tag, price: p.price, active: p.active, sortOrder: p.sortOrder, sizes: SIZES.map((size) => ({ size, stock: p.sizes.find((s) => s.size === size)?.stock ?? 0 })) }); }).catch(() => {});
   }, [id]);
 
+  const toInt = (v: string) => Math.max(0, Math.trunc(Number(v) || 0)); // enforce the int-only, non-negative contract
   function setStock(size: string, stock: number) { setForm((f) => ({ ...f, sizes: f.sizes.map((s) => (s.size === size ? { ...s, stock } : s)) })); }
 
   async function submit(e: React.FormEvent) {
@@ -41,11 +42,11 @@ export default function ProductForm() {
         <input className={`${inputCls} flex-1`} placeholder="Tag (opcional)" value={form.tag ?? ''} onChange={(e) => setForm({ ...form, tag: e.target.value || null })} />
         <input className={`${inputCls} w-[120px]`} type="color" value={form.dotColor} onChange={(e) => setForm({ ...form, dotColor: e.target.value })} />
       </div>
-      <input className={inputCls} type="number" placeholder="Precio (ARS)" value={form.price || ''} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} />
+      <input className={inputCls} type="number" min={0} step={1} placeholder="Precio (ARS)" value={form.price || ''} onChange={(e) => setForm({ ...form, price: toInt(e.target.value) })} />
       <div className="grid grid-cols-4 gap-2">
         {form.sizes.map((s) => (
           <label key={s.size} className="flex flex-col gap-1 text-mut text-[12px] font-display uppercase">{s.size}
-            <input aria-label={`stock-${s.size}`} className={inputCls} type="number" value={s.stock} onChange={(e) => setStock(s.size, Number(e.target.value))} />
+            <input aria-label={`stock-${s.size}`} className={inputCls} type="number" min={0} step={1} value={s.stock} onChange={(e) => setStock(s.size, toInt(e.target.value))} />
           </label>
         ))}
       </div>

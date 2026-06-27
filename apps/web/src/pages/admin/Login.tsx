@@ -39,13 +39,18 @@ export default function Login() {
           <div className="text-red text-[13px] font-display uppercase tracking-[0.06em]">{err}</div>
         )}
         <input
+          aria-label="Email"
+          type="email"
+          autoComplete="username"
           className="bg-bg border border-line2 rounded-[3px] text-tx px-[14px] py-[13px] outline-none focus:border-gold"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <input
+          aria-label="Contraseña"
           type="password"
+          autoComplete="current-password"
           className="bg-bg border border-line2 rounded-[3px] text-tx px-[14px] py-[13px] outline-none focus:border-gold"
           placeholder="Contraseña"
           value={password}

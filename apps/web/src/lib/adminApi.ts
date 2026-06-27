@@ -41,6 +41,7 @@ export const adminApi = {
       headers: { ...auth() },
       body: fd,
     });
+    if (res.status === 401) { useAuth.getState().logout(); throw new Error('Sesión expirada'); }
     if (!res.ok) throw new Error('No se pudo subir la imagen');
     return (await res.json()) as AdminProductDTO;
   },
