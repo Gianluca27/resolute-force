@@ -9,6 +9,12 @@ export interface CartItem {
 
 const emptyCheckoutForm: CustomerInput = { nombre: '', email: '', tel: '', dir: '', ciudad: '' };
 
+// Clamp a (possibly tampered/persisted) qty to a positive integer.
+const clampQty = (q: unknown): number => {
+  const n = Math.floor(Number(q));
+  return Number.isFinite(n) && n >= 1 ? n : 1;
+};
+
 interface CartStore {
   items: CartItem[];
   open: boolean;
@@ -51,7 +57,7 @@ export const useCart = create<CartStore>()(
           const byId = new Map(products.map((p) => [p.id, p]));
           const items = s.items.flatMap((it) => {
             const p = byId.get(it.productId);
-            return p ? [{ ...it, slug: p.slug, line: p.line, color: p.color, price: p.price, imageUrl: p.imageUrl }] : [];
+            return p ? [{ ...it, slug: p.slug, line: p.line, color: p.color, price: p.price, imageUrl: p.imageUrl, qty: clampQty(it.qty) }] : [];
           });
           return { items };
         }),
@@ -64,7 +70,18 @@ export const useCart = create<CartStore>()(
         return true;
       },
     }),
-    { name: 'rf-cart', partialize: (s) => ({ items: s.items }) },
+    {
+      name: 'rf-cart',
+      partialize: (s) => ({ items: s.items }),
+      // Sanitize tampered/corrupt persisted state on hydration (qty -> positive integer).
+      merge: (persisted, current) => {
+        const raw = (persisted as { items?: unknown })?.items;
+        const items = Array.isArray(raw)
+          ? (raw as CartItem[]).filter((it) => it && typeof it.key === 'string').map((it) => ({ ...it, qty: clampQty(it.qty) }))
+          : [];
+        return { ...current, ...(persisted as object), items };
+      },
+    },
   ),
 );
 

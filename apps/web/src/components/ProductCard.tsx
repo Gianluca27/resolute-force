@@ -3,8 +3,10 @@ import type { ProductDTO } from '@resolute/shared';
 import { money } from '../lib/money';
 
 export default function ProductCard({ product, onAdd }: { product: ProductDTO; onAdd: (p: ProductDTO, size: string) => void }) {
-  const firstInStock = product.sizes.find((s) => s.stock > 0)?.size ?? '';
-  const [sel, setSel] = useState(firstInStock);
+  // Default to M when available, otherwise the first in-stock size (stock gating).
+  const inStock = product.sizes.filter((s) => s.stock > 0);
+  const defaultSize = (inStock.find((s) => s.size === 'M') ?? inStock[0])?.size ?? '';
+  const [sel, setSel] = useState(defaultSize);
   const soldOut = product.sizes.every((s) => s.stock <= 0);
   const canAdd = !soldOut && !!sel;
   return (

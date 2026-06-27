@@ -7,7 +7,14 @@ const product = {
   sizes: [{ size: 'S', stock: 5 }, { size: 'M', stock: 5 }, { size: 'L', stock: 5 }, { size: 'XL', stock: 5 }],
 };
 
-it('defaults to the first in-stock size and adds with the selected size', () => {
+it('defaults to M when M is in stock', () => {
+  const onAdd = vi.fn();
+  render(<ProductCard product={product as any} onAdd={onAdd} />);
+  fireEvent.click(screen.getByRole('button', { name: /agregar/i }));
+  expect(onAdd).toHaveBeenCalledWith(product, 'M');
+});
+
+it('defaults to the first in-stock size when M is sold out', () => {
   const onAdd = vi.fn();
   const p = { ...product, sizes: [{ size: 'S', stock: 0 }, { size: 'M', stock: 0 }, { size: 'L', stock: 5 }, { size: 'XL', stock: 5 }] };
   render(<ProductCard product={p as any} onAdd={onAdd} />);

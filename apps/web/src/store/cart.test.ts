@@ -44,4 +44,20 @@ describe('cart store', () => {
     expect(items[0]!.price).toBe(35000); // price refreshed from the server
     expect(items[0]!.qty).toBe(2); // quantity preserved
   });
+
+  it('clamps tampered (negative/non-integer) quantities to a positive integer on reconcile', () => {
+    useCart.setState({
+      items: [
+        { key: 'p1-M', productId: 'p1', slug: 's', line: 'L', color: 'C', size: 'M', price: 30000, imageUrl: '', qty: -5 },
+        { key: 'p1-L', productId: 'p1', slug: 's', line: 'L', color: 'C', size: 'L', price: 30000, imageUrl: '', qty: 1.5 },
+      ],
+    });
+    useCart.getState().reconcile([
+      { id: 'p1', slug: 's', line: 'L', color: 'C', dotColor: '#000', tag: null, price: 30000, imageUrl: '', sizes: [{ size: 'M', stock: 5 }] },
+    ]);
+    const items = useCart.getState().items;
+    expect(items.find((i) => i.key === 'p1-M')!.qty).toBe(1); // -5 clamped up to 1
+    expect(items.find((i) => i.key === 'p1-L')!.qty).toBe(1); // 1.5 floored to 1
+    expect(cartSubtotal(items)).toBe(60000); // no negative subtotal
+  });
 });
