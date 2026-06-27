@@ -54,7 +54,7 @@ export default function Landing() {
       <Nav cartCount={cartCount(items)} onOpenCart={() => setOpen(true)} />
       <Hero content={content.data} />
       <Manifiesto />
-      <Productos products={products.data ?? []} onAdd={(p, size) => { add(p, size); showToast(`${p.line} · ${p.color} (${size})`); }} />
+      <Productos products={products.data ?? []} transferDiscountPct={content.data.transferDiscountPct} onAdd={(p, size) => { add(p, size); showToast(`${p.line} · ${p.color} (${size})`); }} />
       <Historia />
       {drop.data && <Proximos drop={drop.data} />}
       <Contacto content={content.data} />

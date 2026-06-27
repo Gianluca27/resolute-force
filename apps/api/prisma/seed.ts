@@ -50,7 +50,9 @@ export async function seed() {
       heroTitle2: 'Mentality',
       heroSubtitle: 'No vendemos remeras. Forjamos una mentalidad. Indumentaria deportiva para los que entrenan bajo presión y no se detienen ante nada.',
       transferDiscountPct: 10,
-      bankAlias: '',
+      // Placeholder transfer data so a fresh install ships a usable default (transfer is the discounted,
+      // default method). Replace with the real alias/CBU from Admin (Módulo 11). See QA E-01.
+      bankAlias: 'resolute.force',
       bankCbu: '',
       contactWhatsapp: '5493413213723',
       contactInstagram: '@resoluteforceok',

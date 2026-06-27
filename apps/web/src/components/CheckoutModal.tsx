@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId, cloneElement, type ReactElement } from 'react';
 import { customerSchema } from '@resolute/shared';
 import type { CartLineInput, CustomerInput, QuoteResult } from '@resolute/shared';
 import { api } from '../lib/api';
@@ -14,27 +14,34 @@ const inputCls = 'bg-card border border-line2 rounded-[3px] text-tx px-[14px] py
 const labelCls = 'font-display text-[12.5px] tracking-[0.14em] uppercase text-mut';
 
 export default function CheckoutModal() {
-  const { items, setCheckoutOpen, clear } = useCart();
+  // Form lives in the cart store so typed data survives close/reopen (the modal unmounts on close). H-01.
+  const { items, setCheckoutOpen, clear, checkoutForm: form, setCheckoutForm } = useCart();
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState<CustomerInput>({ nombre: '', email: '', tel: '', dir: '', ciudad: '' });
   const [method, setMethod] = useState<PayMethod>('transfer');
   const [q, setQ] = useState<QuoteResult | null>(null);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [invalid, setInvalid] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
   const lineItems: CartLineInput[] = items.map((i) => ({ productId: i.productId, size: i.size, qty: i.qty }));
-  const close = () => { setCheckoutOpen(false); setStep(0); };
+  const set = (patch: Partial<CustomerInput>) => setCheckoutForm({ ...form, ...patch });
+  const close = () => setCheckoutOpen(false);
   const stop = (e: React.MouseEvent) => e.stopPropagation();
   const total = method === 'transfer' ? q?.totalTransfer ?? 0 : q?.totalCard ?? 0;
 
   async function toPago() {
-    setErr(null);
-    if (!customerSchema.safeParse(form).success) { setErr('Completá tus datos para continuar'); return; }
+    const parsed = customerSchema.safeParse(form);
+    if (!parsed.success) {
+      const fields = new Set(parsed.error.issues.map((i) => String(i.path[0])));
+      setInvalid(fields); setErr(validationMessage(fields, form)); // H-06: name the bad field(s)
+      return;
+    }
+    setInvalid(new Set()); setErr(null);
     setBusy(true);
     try { setQ(await api.quote(lineItems)); setStep(1); }
-    catch (e) { setErr(e instanceof Error ? e.message : 'No se pudo cotizar'); }
+    catch (e) { setErr(friendlyError(e, 'No se pudo cotizar. Revisá tu conexión.')); }
     finally { setBusy(false); }
   }
 
@@ -44,14 +51,14 @@ export default function CheckoutModal() {
       const r = await api.transferOrder({ items: lineItems, customer: form });
       setConfirmation({ orderNo: r.orderNo, total: r.total, count: r.count, pay: 'transfer', name: r.name, bankAlias: r.bankAlias, bankCbu: r.bankCbu });
       setStep(2); clear();
-    } catch (e) { setErr(e instanceof Error ? e.message : 'No se pudo crear el pedido'); }
+    } catch (e) { setErr(friendlyError(e, 'No se pudo crear el pedido. Revisá tu conexión.')); }
     finally { setBusy(false); }
   }
 
   async function startWallet() {
     setBusy(true); setErr(null);
     try { const r = await api.preference({ items: lineItems, customer: form }); setPreferenceId(r.preferenceId); }
-    catch (e) { setErr(e instanceof Error ? e.message : 'No se pudo iniciar el pago'); }
+    catch (e) { setErr(friendlyError(e, 'No se pudo iniciar el pago. Revisá tu conexión.')); }
     finally { setBusy(false); }
   }
 
@@ -70,7 +77,7 @@ export default function CheckoutModal() {
       } else {
         setErr(`Pago ${r.status === 'rejected' ? 'rechazado' : 'pendiente'}. Probá otra tarjeta o medio de pago.`);
       }
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Error al procesar el pago'); }
+    } catch (e) { setErr(friendlyError(e, 'Error al procesar el pago. Revisá tu conexión.')); }
     finally { setBusy(false); }
   }
 
@@ -87,17 +94,17 @@ export default function CheckoutModal() {
         <div className="h-[3px] bg-line"><div className="h-full bg-red transition-[width] duration-300" style={{ width: progress }} /></div>
 
         <div className="p-6">
-          {err && <div className="mb-3 text-red text-[14px] font-display tracking-[0.06em] uppercase">{err}</div>}
+          {err && <div id="checkout-error" role="alert" className="mb-3 text-red text-[14px] font-display tracking-[0.06em] uppercase">{err}</div>}
 
           {step === 0 && (
             <div className="flex flex-col gap-[14px]">
-              <Field label="Nombre y apellido"><input className={inputCls} placeholder="Tu nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></Field>
+              <Field label="Nombre y apellido" invalid={invalid.has('nombre')} errorId="checkout-error"><input className={inputCls} maxLength={80} placeholder="Tu nombre" value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} /></Field>
               <div className="flex gap-3 flex-wrap">
-                <Field className="flex-1 basis-[180px]" label="Email"><input className={inputCls} placeholder="tu@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
-                <Field className="flex-1 basis-[140px]" label="Teléfono"><input className={inputCls} placeholder="11 1234-5678" value={form.tel} onChange={(e) => setForm({ ...form, tel: e.target.value })} /></Field>
+                <Field className="flex-1 basis-[180px]" label="Email" invalid={invalid.has('email')} errorId="checkout-error"><input className={inputCls} maxLength={120} placeholder="tu@email.com" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
+                <Field className="flex-1 basis-[140px]" label="Teléfono" invalid={invalid.has('tel')} errorId="checkout-error"><input className={inputCls} maxLength={30} placeholder="11 1234-5678" value={form.tel} onChange={(e) => set({ tel: e.target.value })} /></Field>
               </div>
-              <Field label="Dirección de envío"><input className={inputCls} placeholder="Calle y número" value={form.dir} onChange={(e) => setForm({ ...form, dir: e.target.value })} /></Field>
-              <Field label="Ciudad / Provincia"><input className={inputCls} placeholder="Ciudad, Provincia" value={form.ciudad} onChange={(e) => setForm({ ...form, ciudad: e.target.value })} /></Field>
+              <Field label="Dirección de envío" invalid={invalid.has('dir')} errorId="checkout-error"><input className={inputCls} maxLength={160} placeholder="Calle y número" value={form.dir} onChange={(e) => set({ dir: e.target.value })} /></Field>
+              <Field label="Ciudad / Provincia" invalid={invalid.has('ciudad')} errorId="checkout-error"><input className={inputCls} maxLength={100} placeholder="Ciudad, Provincia" value={form.ciudad} onChange={(e) => set({ ciudad: e.target.value })} /></Field>
               <button disabled={busy} onClick={toPago} className="w-full mt-1 bg-red text-white border-0 rounded-[2px] p-4 cursor-pointer font-display font-bold text-[16px] tracking-[0.13em] uppercase hover:bg-redd disabled:opacity-60">Continuar al pago</button>
             </div>
           )}
@@ -138,12 +145,15 @@ export default function CheckoutModal() {
               </div>
               <h3 className="m-0 font-display font-black text-[32px] tracking-[0.02em] uppercase">¡Pedido confirmado!</h3>
               <p className="m-0 text-mut text-[15.5px] leading-[1.6] max-w-[380px]">Gracias <span className="text-tx font-semibold">{confirmation.name}</span>. Tu orden está en marcha. Te enviamos los detalles por email.</p>
-              {confirmation.pay === 'transfer' && confirmation.bankAlias && (
+              {confirmation.pay === 'transfer' && (
                 <div className="w-full bg-card border border-gold/40 rounded-[4px] px-[18px] py-4 text-left">
                   <div className="font-display text-[12px] tracking-[0.14em] uppercase text-gold mb-2">Datos para transferir</div>
-                  <Row label="Alias" value={confirmation.bankAlias} />
+                  {confirmation.bankAlias && <Row label="Alias" value={confirmation.bankAlias} />}
                   {confirmation.bankCbu && <Row label="CBU" value={confirmation.bankCbu} />}
                   <Row label="Importe" value={money(confirmation.total)} />
+                  {!confirmation.bankAlias && !confirmation.bankCbu && (
+                    <p className="m-0 mt-2 text-mut text-[13px] leading-[1.5] normal-case">Te enviamos el alias y CBU para transferir por email a la brevedad.</p>
+                  )}
                 </div>
               )}
               <div className="w-full bg-card border border-line rounded-[4px] px-[18px] py-4 flex flex-col gap-[9px] mt-1">
@@ -162,8 +172,39 @@ export default function CheckoutModal() {
   );
 }
 
-function Field({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {
-  return <div className={`flex flex-col gap-[6px] ${className}`}><label className={labelCls}>{label}</label>{children}</div>;
+// A failed fetch rejects with a TypeError ("Failed to fetch"); show a friendly fallback rather than leaking
+// it. Real API/business errors arrive as Error with a server message worth surfacing verbatim. H-02.
+function friendlyError(e: unknown, fallback: string): string {
+  if (e instanceof TypeError) return fallback;
+  return e instanceof Error ? e.message : fallback;
+}
+
+const FIELD_LABELS: Record<string, string> = { nombre: 'nombre', email: 'email', tel: 'teléfono', dir: 'dirección', ciudad: 'ciudad' };
+// Name the offending field(s) instead of a single generic message. H-06.
+function validationMessage(fields: Set<string>, form: CustomerInput): string {
+  if (fields.size === 1 && fields.has('email') && form.email.trim()) return 'El email no parece válido';
+  if (fields.size === 1 && fields.has('tel')) return 'El teléfono solo puede tener números';
+  const labels = [...fields].map((f) => FIELD_LABELS[f] ?? f);
+  return `Completá o corregí: ${labels.join(', ')}`;
+}
+
+// Associates the <label> with its <input> via a generated id (H-03) and wires aria-invalid /
+// aria-describedby so screen readers announce the validation error (H-04).
+function Field({ label, children, className = '', invalid, errorId }: {
+  label: string; children: ReactElement<React.InputHTMLAttributes<HTMLInputElement>>; className?: string; invalid?: boolean; errorId?: string;
+}) {
+  const id = useId();
+  return (
+    <div className={`flex flex-col gap-[6px] ${className}`}>
+      <label htmlFor={id} className={labelCls}>{label}</label>
+      {cloneElement(children, {
+        id,
+        'aria-invalid': invalid || undefined,
+        'aria-describedby': invalid && errorId ? errorId : undefined,
+        className: `${children.props.className ?? ''}${invalid ? ' ring-1 ring-red' : ''}`,
+      })}
+    </div>
+  );
 }
 function Row({ label, value, gold }: { label: string; value: string; gold?: boolean }) {
   return <div className={`flex justify-between text-[14px] ${gold ? 'text-gold' : 'text-mut'}`}><span>{label}</span><span className="capitalize">{value}</span></div>;
