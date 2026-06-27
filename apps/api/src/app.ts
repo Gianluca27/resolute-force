@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { env } from './env.js';
 import { productsRouter } from './routes/products.js';
 import { dropRouter } from './routes/drop.js';
@@ -17,6 +18,12 @@ export function createApp() {
   app.use(helmet());
   app.use(cors({ origin: env.PUBLIC_WEB_URL, credentials: true }));
   app.use(express.json({ limit: '1mb' }));
+
+  // Broad abuse cap on the whole API, plus a strict bucket on admin login (brute-force).
+  const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false, message: { error: 'Demasiadas solicitudes. Probá de nuevo más tarde.' } });
+  const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false, message: { error: 'Demasiados intentos de acceso. Probá de nuevo más tarde.' } });
+  app.use('/api', apiLimiter);
+  app.use('/api/admin/login', loginLimiter);
 
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
   app.use('/api/products', productsRouter);

@@ -16,7 +16,8 @@ export async function seed() {
   for (const p of products) {
     await prisma.product.upsert({
       where: { slug: p.slug },
-      update: { line: p.line, color: p.color, dotColor: p.dotColor, tag: p.tag, price: 30000, imageUrl: p.image, sortOrder: p.sortOrder, active: true },
+      // Seed is initial data only — never clobber admin edits (price/image/tag/stock/sortOrder) on re-run.
+      update: {},
       create: {
         slug: p.slug, line: p.line, color: p.color, dotColor: p.dotColor, tag: p.tag,
         price: 30000, imageUrl: p.image, sortOrder: p.sortOrder, active: true,
@@ -58,7 +59,7 @@ export async function seed() {
   });
 
   if (env.ADMIN_PASSWORD) {
-    const passwordHash = await bcrypt.hash(env.ADMIN_PASSWORD, 10);
+    const passwordHash = await bcrypt.hash(env.ADMIN_PASSWORD, 12);
     await prisma.adminUser.upsert({ where: { email: env.ADMIN_EMAIL }, update: { passwordHash }, create: { email: env.ADMIN_EMAIL, passwordHash } });
   }
 }

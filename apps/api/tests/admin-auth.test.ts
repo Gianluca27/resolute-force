@@ -23,4 +23,9 @@ describe('admin auth', () => {
     expect(res.status).toBe(200);
     expect(res.body.email).toBe('admin@test.com');
   });
+
+  it('rejects a tampered / malformed bearer token', async () => {
+    expect((await request(app).get('/api/admin/me').set({ Authorization: 'Bearer not.a.valid.jwt' })).status).toBe(401);
+    expect((await request(app).get('/api/admin/me').set({ Authorization: 'Basic abc' })).status).toBe(401);
+  });
 });
