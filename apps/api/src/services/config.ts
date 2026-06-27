@@ -18,3 +18,20 @@ export async function getContent(): Promise<ContentDTO> {
     contactEmail: c.contactEmail, contactLocation: c.contactLocation,
   };
 }
+
+export async function updateDrop(input: { targetAt: string; visible: boolean; title: string; teaser: string }): Promise<DropDTO> {
+  const d = await prisma.dropConfig.update({ where: { id: 1 }, data: { targetAt: new Date(input.targetAt), visible: input.visible, title: input.title, teaser: input.teaser } });
+  return { targetAt: d.targetAt.toISOString(), visible: d.visible, title: d.title, teaser: d.teaser };
+}
+
+export async function updateContent(input: ContentDTO): Promise<ContentDTO> {
+  await prisma.siteContent.update({
+    where: { id: 1 },
+    data: {
+      marquee: JSON.stringify(input.marquee), heroKicker: input.heroKicker, heroTitle1: input.heroTitle1, heroTitle2: input.heroTitle2, heroSubtitle: input.heroSubtitle,
+      transferDiscountPct: input.transferDiscountPct, bankAlias: input.bankAlias, bankCbu: input.bankCbu,
+      contactWhatsapp: input.contactWhatsapp, contactInstagram: input.contactInstagram, contactEmail: input.contactEmail, contactLocation: input.contactLocation,
+    },
+  });
+  return getContent();
+}
