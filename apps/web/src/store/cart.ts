@@ -16,6 +16,7 @@ interface CartStore {
   dec: (key: string) => void;
   remove: (key: string) => void;
   clear: () => void;
+  reconcile: (products: ProductDTO[]) => void;
   setOpen: (open: boolean) => void;
   setCheckoutOpen: (open: boolean) => void;
   startCheckout: () => boolean;
@@ -38,6 +39,16 @@ export const useCart = create<CartStore>()(
       dec: (key) => set((s) => ({ items: s.items.flatMap((x) => (x.key === key ? (x.qty > 1 ? [{ ...x, qty: x.qty - 1 }] : []) : [x])) })),
       remove: (key) => set((s) => ({ items: s.items.filter((x) => x.key !== key) })),
       clear: () => set({ items: [] }),
+      // Refresh persisted line prices/labels from the latest catalog; drop products that no longer exist.
+      reconcile: (products) =>
+        set((s) => {
+          const byId = new Map(products.map((p) => [p.id, p]));
+          const items = s.items.flatMap((it) => {
+            const p = byId.get(it.productId);
+            return p ? [{ ...it, slug: p.slug, line: p.line, color: p.color, price: p.price, imageUrl: p.imageUrl }] : [];
+          });
+          return { items };
+        }),
       setOpen: (open) => set({ open }),
       setCheckoutOpen: (checkoutOpen) => set({ checkoutOpen }),
       startCheckout: () => {

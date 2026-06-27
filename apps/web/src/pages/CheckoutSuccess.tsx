@@ -1,8 +1,12 @@
+import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useCart } from '../store/cart';
 
 export default function CheckoutSuccess() {
   const [params] = useSearchParams();
   const orderNo = params.get('external_reference') ?? '';
+  // Wallet (MercadoPago) returns here via full-page redirect — clear the cart the user just paid for.
+  useEffect(() => { useCart.getState().clear(); }, []);
   return (
     <main className="min-h-screen bg-bg text-tx font-body flex items-center justify-center px-4">
       <div className="max-w-[440px] text-center flex flex-col items-center gap-4">

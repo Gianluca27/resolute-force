@@ -65,6 +65,8 @@ export default function CheckoutModal() {
       if (r.status === 'approved') {
         setConfirmation({ orderNo: r.orderNo, total: r.total ?? total, count: r.count ?? cartCount(items), pay: 'card', name: r.name ?? form.nombre });
         setStep(2); clear();
+      } else if (r.status === 'refunded') {
+        setErr(r.detail ?? 'Se agotó el stock durante el pago; reintegramos el cobro.');
       } else {
         setErr(`Pago ${r.status === 'rejected' ? 'rechazado' : 'pendiente'}. Probá otra tarjeta o medio de pago.`);
       }
@@ -103,7 +105,7 @@ export default function CheckoutModal() {
           {step === 1 && q && (
             <div className="flex flex-col gap-[14px]">
               <div className="font-display text-[12.5px] tracking-[0.14em] uppercase text-mut">Elegí cómo pagar</div>
-              <PayOption active={method === 'transfer'} onClick={() => { setMethod('transfer'); setPreferenceId(null); }} title="Transferencia" sub="Te enviamos los datos por email" badge="10% OFF" />
+              <PayOption active={method === 'transfer'} onClick={() => { setMethod('transfer'); setPreferenceId(null); }} title="Transferencia" sub="Te enviamos los datos por email" badge={q.transferDiscount > 0 ? `${Math.round((q.transferDiscount / q.subtotal) * 100)}% OFF` : undefined} />
               <PayOption active={method === 'card'} onClick={() => { setMethod('card'); setPreferenceId(null); }} title="Tarjeta" sub="Hasta 3 cuotas sin interés" />
               <PayOption active={method === 'wallet'} onClick={() => { setMethod('wallet'); setPreferenceId(null); }} title="Mercado Pago" sub="Pagá con tu cuenta de MercadoPago" />
 

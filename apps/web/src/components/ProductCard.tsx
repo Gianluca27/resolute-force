@@ -3,7 +3,10 @@ import type { ProductDTO } from '@resolute/shared';
 import { money } from '../lib/money';
 
 export default function ProductCard({ product, onAdd }: { product: ProductDTO; onAdd: (p: ProductDTO, size: string) => void }) {
-  const [sel, setSel] = useState('M');
+  const firstInStock = product.sizes.find((s) => s.stock > 0)?.size ?? '';
+  const [sel, setSel] = useState(firstInStock);
+  const soldOut = product.sizes.every((s) => s.stock <= 0);
+  const canAdd = !soldOut && !!sel;
   return (
     <div className="relative bg-card border border-line rounded-[4px] overflow-hidden flex flex-col transition hover:-translate-y-[5px] hover:border-line2 hover:shadow-[0_18px_40px_-20px_rgba(0,0,0,0.8)]">
       {product.tag && (
@@ -20,11 +23,13 @@ export default function ProductCard({ product, onAdd }: { product: ProductDTO; o
           </div>
         </div>
         <div className="flex gap-[7px]">
-          {product.sizes.map(({ size }) => {
+          {product.sizes.map(({ size, stock }) => {
             const active = size === sel;
+            const oos = stock <= 0;
             return (
-              <button key={size} onClick={() => setSel(size)}
-                className={`flex-1 min-w-0 rounded-[2px] py-[9px] cursor-pointer font-display font-bold text-[14px] tracking-[0.06em] uppercase transition ${active ? 'bg-tx text-bg border border-tx' : 'bg-transparent text-mut border border-line2'}`}>
+              <button key={size} disabled={oos} onClick={() => setSel(size)}
+                title={oos ? 'Sin stock' : undefined}
+                className={`flex-1 min-w-0 rounded-[2px] py-[9px] font-display font-bold text-[14px] tracking-[0.06em] uppercase transition ${oos ? 'bg-transparent text-mut/50 border border-line line-through opacity-40 cursor-not-allowed' : active ? 'bg-tx text-bg border border-tx cursor-pointer' : 'bg-transparent text-mut border border-line2 cursor-pointer'}`}>
                 {size}
               </button>
             );
@@ -32,9 +37,9 @@ export default function ProductCard({ product, onAdd }: { product: ProductDTO; o
         </div>
         <div className="flex items-center justify-between gap-3 mt-auto pt-[6px]">
           <span className="font-display font-extrabold text-[26px] tracking-[0.01em]">{money(product.price)}</span>
-          <button onClick={() => onAdd(product, sel)} className="inline-flex items-center gap-2 bg-tx text-bg border-0 rounded-[2px] px-4 py-[11px] cursor-pointer font-display font-bold text-[14px] tracking-[0.12em] uppercase transition hover:bg-red hover:text-white">
+          <button disabled={!canAdd} onClick={() => canAdd && onAdd(product, sel)} className="inline-flex items-center gap-2 bg-tx text-bg border-0 rounded-[2px] px-4 py-[11px] cursor-pointer font-display font-bold text-[14px] tracking-[0.12em] uppercase transition hover:bg-red hover:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-tx disabled:hover:text-bg">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
-            Agregar
+            {soldOut ? 'Sin stock' : 'Agregar'}
           </button>
         </div>
       </div>

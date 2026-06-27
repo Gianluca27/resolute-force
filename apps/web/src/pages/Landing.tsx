@@ -31,6 +31,21 @@ export default function Landing() {
   const { items, open, checkoutOpen, setOpen, add } = useCart();
   const showToast = useToast((s) => s.show);
 
+  // Keep the persisted cart in sync with current catalog prices / availability.
+  const productData = products.data;
+  useEffect(() => { if (productData) useCart.getState().reconcile(productData); }, [productData]);
+
+  if (content.isError) {
+    return (
+      <div data-testid="landing" className="min-h-screen bg-bg text-tx font-body flex items-center justify-center px-4 text-center">
+        <div className="flex flex-col items-center gap-4 max-w-[420px]">
+          <h1 className="font-display font-black text-[28px] uppercase">No pudimos cargar la tienda</h1>
+          <p className="text-mut">Revisá tu conexión e intentá de nuevo.</p>
+          <button onClick={() => content.refetch()} className="bg-red text-white border-0 rounded-[2px] px-6 py-3 cursor-pointer font-display font-bold tracking-[0.12em] uppercase hover:bg-redd">Reintentar</button>
+        </div>
+      </div>
+    );
+  }
   if (!content.data) return <div data-testid="landing" className="min-h-screen bg-bg" />;
 
   return (

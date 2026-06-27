@@ -7,12 +7,29 @@ const product = {
   sizes: [{ size: 'S', stock: 5 }, { size: 'M', stock: 5 }, { size: 'L', stock: 5 }, { size: 'XL', stock: 5 }],
 };
 
-it('defaults to size M and adds with the selected size', () => {
+it('defaults to the first in-stock size and adds with the selected size', () => {
   const onAdd = vi.fn();
-  render(<ProductCard product={product as any} onAdd={onAdd} />);
-  fireEvent.click(screen.getByRole('button', { name: 'L' }));
+  const p = { ...product, sizes: [{ size: 'S', stock: 0 }, { size: 'M', stock: 0 }, { size: 'L', stock: 5 }, { size: 'XL', stock: 5 }] };
+  render(<ProductCard product={p as any} onAdd={onAdd} />);
   fireEvent.click(screen.getByRole('button', { name: /agregar/i }));
-  expect(onAdd).toHaveBeenCalledWith(product, 'L');
+  expect(onAdd).toHaveBeenCalledWith(p, 'L'); // S and M are out of stock, so L is the default
+});
+
+it('disables out-of-stock size buttons', () => {
+  const p = { ...product, sizes: [{ size: 'S', stock: 0 }, { size: 'M', stock: 5 }] };
+  render(<ProductCard product={p as any} onAdd={() => {}} />);
+  expect(screen.getByRole('button', { name: 'S' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'M' })).not.toBeDisabled();
+});
+
+it('disables the add button when the product is fully sold out', () => {
+  const onAdd = vi.fn();
+  const p = { ...product, sizes: [{ size: 'S', stock: 0 }, { size: 'M', stock: 0 }] };
+  render(<ProductCard product={p as any} onAdd={onAdd} />);
+  const addBtn = screen.getByRole('button', { name: /sin stock/i });
+  expect(addBtn).toBeDisabled();
+  fireEvent.click(addBtn);
+  expect(onAdd).not.toHaveBeenCalled();
 });
 
 it('shows the price and tag', () => {

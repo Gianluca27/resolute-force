@@ -28,4 +28,20 @@ describe('cart store', () => {
     expect(useCart.getState().startCheckout()).toBe(false);
     expect(useCart.getState().checkoutOpen).toBe(false);
   });
+
+  it('reconciles persisted prices against the latest catalog and drops vanished products', () => {
+    useCart.setState({
+      items: [
+        { key: 'p1-M', productId: 'p1', slug: 's', line: 'L', color: 'C', size: 'M', price: 20000, imageUrl: '', qty: 2 },
+        { key: 'gone-M', productId: 'gone', slug: 'g', line: 'G', color: 'X', size: 'M', price: 9000, imageUrl: '', qty: 1 },
+      ],
+    });
+    useCart.getState().reconcile([
+      { id: 'p1', slug: 's2', line: 'Nueva', color: 'Negro', dotColor: '#000', tag: null, price: 35000, imageUrl: '/new.png', sizes: [{ size: 'M', stock: 5 }] },
+    ]);
+    const items = useCart.getState().items;
+    expect(items).toHaveLength(1); // 'gone' is no longer in the catalog
+    expect(items[0]!.price).toBe(35000); // price refreshed from the server
+    expect(items[0]!.qty).toBe(2); // quantity preserved
+  });
 });

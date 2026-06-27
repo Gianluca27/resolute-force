@@ -13,3 +13,9 @@ it('renders nothing when not visible', () => {
   const { container } = render(<Proximos drop={{ ...drop, visible: false }} />);
   expect(container).toBeEmptyDOMElement();
 });
+
+it('renders the admin-configured drop title', () => {
+  render(<Proximos drop={{ ...drop, title: 'Pressure Drop Inminente' }} />);
+  expect(screen.getByText(/pressure drop/i)).toBeInTheDocument();
+  expect(screen.getByText(/inminente/i)).toBeInTheDocument();
+});

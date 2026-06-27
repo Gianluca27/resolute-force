@@ -2,6 +2,7 @@ import { beforeEach, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CheckoutModal from './CheckoutModal';
 import { useCart } from '../store/cart';
+import { api } from '../lib/api';
 
 vi.mock('../lib/api', () => ({
   api: {
@@ -41,6 +42,16 @@ it('card → Brick pay approved shows confirmation', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'pay-card' }));
   expect(await screen.findByText(/pedido confirmado/i)).toBeInTheDocument();
   expect(screen.getByText(/RF-777000/)).toBeInTheDocument();
+});
+
+it('card → refunded (stock lost mid-payment) shows the refund notice, not a confirmation', async () => {
+  vi.mocked(api.paymentCard).mockResolvedValueOnce({ status: 'refunded', orderNo: 'RF-9', detail: 'Se agotó el stock durante el pago; reintegramos el cobro.' });
+  render(<CheckoutModal />);
+  await fillDatosAndContinue();
+  fireEvent.click(screen.getByRole('button', { name: 'Tarjeta' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'pay-card' }));
+  expect(await screen.findByText(/reintegramos el cobro/i)).toBeInTheDocument();
+  expect(screen.queryByText(/pedido confirmado/i)).not.toBeInTheDocument();
 });
 
 it('wallet → renders the Wallet button after creating a preference', async () => {
