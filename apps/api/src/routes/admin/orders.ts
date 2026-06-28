@@ -5,8 +5,19 @@ import { changeOrderStatus, InvalidStatusTransition, OutOfStockError } from '../
 
 export const adminOrdersRouter = Router();
 
+// DTO: expose only what the admin card needs. Strips internal payment/pricing fields
+// (mpPaymentId, mpPreferenceId, subtotal, discount) that the UI never renders (H-05).
 adminOrdersRouter.get('/', async (_req, res, next) => {
-  try { res.json(await prisma.order.findMany({ orderBy: { createdAt: 'desc' }, include: { items: true } })); } catch (e) { next(e); }
+  try {
+    res.json(await prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, orderNo: true, customerName: true, customerEmail: true, customerPhone: true,
+        address: true, city: true, paymentMethod: true, status: true, total: true, createdAt: true,
+        items: { select: { productId: true, line: true, color: true, size: true, unitPrice: true, qty: true } },
+      },
+    }));
+  } catch (e) { next(e); }
 });
 
 const statusSchema = z.object({ status: z.enum(['pending', 'paid', 'shipped', 'cancelled']) });

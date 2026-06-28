@@ -63,7 +63,7 @@ describe('Orders list', () => {
     expect(card.items[0]).toMatchObject({ line: 'Champion Mentality', color: 'Azul Marino', size: 'M', qty: 2 });
   });
 
-  it('TC-ORD-002: cada campo de la card mapea a los datos correctos (+ subtotal/discount crudos)', async () => {
+  it('TC-ORD-002: cada campo de la card mapea a los datos correctos (DTO sin campos internos)', async () => {
     const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 2 }], customer, method: 'transfer' });
     const r = await request(app).get('/api/admin/orders').set(authHeader());
     const o = r.body.find((x: any) => x.id === order.id);
@@ -76,9 +76,12 @@ describe('Orders list', () => {
       city: 'CABA',
       paymentMethod: 'transfer',
       total: 54000, // 60000 − 10%
-      subtotal: 60000, // fila Prisma cruda → expone subtotal/discount
-      discount: 6000,
     });
+    // H-05 fixed: el DTO ya no expone campos internos de pago/precio.
+    expect(o.subtotal).toBeUndefined();
+    expect(o.discount).toBeUndefined();
+    expect(o.mpPaymentId).toBeUndefined();
+    expect(o.mpPreferenceId).toBeUndefined();
     expect(o.items[0]).toMatchObject({ line: 'Champion Mentality', color: 'Azul Marino', size: 'M', unitPrice: 30000, qty: 2 });
   });
 
@@ -262,14 +265,18 @@ describe('Edge cases & flows', () => {
     expect(await stockOf(negroId, 'M')).toBe(24); // línea válida decrementa
   });
 
-  it('TC-ORD-019: orden transfer muestra el descuento en subtotal/discount/total', async () => {
+  it('TC-ORD-019: el total transfer ya viene con el descuento aplicado (subtotal/discount no se exponen)', async () => {
     const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer, method: 'transfer' });
     const cardOrder = (await createOrder({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer, method: 'card' })).order;
     const r = await request(app).get('/api/admin/orders').set(authHeader());
     const t = r.body.find((x: any) => x.id === order.id);
     const c = r.body.find((x: any) => x.id === cardOrder.id);
-    expect(t).toMatchObject({ subtotal: 30000, discount: 3000, total: 27000 });
-    expect(c).toMatchObject({ subtotal: 30000, discount: 0, total: 30000 });
+    expect(t.total).toBe(27000); // transfer: 30000 − 10%
+    expect(c.total).toBe(30000); // card: full
+    // H-05 fixed: subtotal/discount no van en el DTO.
+    expect(t.subtotal).toBeUndefined();
+    expect(t.discount).toBeUndefined();
+    expect(c.discount).toBeUndefined();
   });
 });
 

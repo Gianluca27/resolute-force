@@ -86,7 +86,7 @@ describe('Orders — render de card', () => {
 });
 
 describe('Orders — mutación de estado', () => {
-  it('TC-ORD-020 (CD-19): un PATCH fallido (422/409) NO surface error y el select revierte', async () => {
+  it('TC-ORD-020 (CD-19 fixed): un PATCH fallido (422/409) surface el motivo en un toast y el select revierte', async () => {
     vi.mocked(adminApi.orders).mockResolvedValue([mkOrder({ status: 'paid' })]);
     vi.mocked(adminApi.setOrderStatus).mockRejectedValue(new Error('No se puede revertir un pedido pagado a pendiente'));
     renderOrders();
@@ -97,10 +97,10 @@ describe('Orders — mutación de estado', () => {
     // mutate() agenda la mutationFn → esperamos a que dispare el PATCH.
     await waitFor(() => expect(adminApi.setOrderStatus).toHaveBeenCalledWith('o1', 'pending'));
 
-    // El error existe pero NO se muestra: sin onError/toast, y el <select> controlado vuelve a 'paid'.
-    expect(select.value).toBe('paid'); // snap-back silencioso
-    expect(screen.queryByText(/revertir|stock|error/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    // H-01 fixed: onError muestra el motivo del server en un toast.
+    expect(await screen.findByText('No se puede revertir un pedido pagado a pendiente')).toBeInTheDocument();
+    // El <select> controlado sigue reflejando el estado real del server.
+    expect(select.value).toBe('paid');
   });
 
   it('TC-ORD: cambio exitoso invoca setOrderStatus con el nuevo valor', async () => {
@@ -114,24 +114,32 @@ describe('Orders — mutación de estado', () => {
 });
 
 describe('Orders — a11y & perf', () => {
-  it('TC-ORD-023: el <select> no tiene label/aria-label (gap a11y) y las opciones están en inglés crudo', async () => {
+  it('TC-ORD-023 (fixed): el <select> tiene nombre accesible por orden y opciones en es-AR', async () => {
     vi.mocked(adminApi.orders).mockResolvedValue([mkOrder()]);
     renderOrders();
-    const select = (await screen.findByRole('combobox')) as HTMLSelectElement;
-    // Gap confirmado: sin nombre accesible (ni <label> ni aria-label) → el lector no sabe a qué orden pertenece.
-    expect(select).toHaveAccessibleName('');
-    // Opciones = enum inglés crudo (inconsistencia i18n con el resto en es-AR).
-    const opts = within(select).getAllByRole('option').map((o) => o.textContent);
-    expect(opts).toEqual(['pending', 'paid', 'shipped', 'cancelled']);
+    const select = (await screen.findByRole('combobox', { name: 'Estado del pedido RF-123456' })) as HTMLSelectElement;
+    // H-02 fixed: aria-label identifica a qué pedido pertenece el control.
+    expect(select).toHaveAccessibleName('Estado del pedido RF-123456');
+    // H-03 fixed: opciones en es-AR (los value siguen siendo el enum del API).
+    const opts = within(select).getAllByRole('option');
+    expect(opts.map((o) => o.textContent)).toEqual(['Pendiente', 'Pagado', 'Enviado', 'Cancelado']);
+    expect(opts.map((o) => (o as HTMLOptionElement).value)).toEqual(['pending', 'paid', 'shipped', 'cancelled']);
   });
 
-  it('TC-ORD-022: lista grande (500 órdenes) renderiza sin paginación', async () => {
+  it('TC-ORD-022 (fixed): lista grande pagina (20 por página) y filtra por búsqueda', async () => {
     const big = Array.from({ length: 500 }, (_, i) =>
-      mkOrder({ id: `o${i}`, orderNo: `RF-${String(100000 + i)}` }),
+      mkOrder({ id: `o${i}`, orderNo: `RF-${String(100000 + i)}`, customerName: `Cliente ${i}` }),
     );
     vi.mocked(adminApi.orders).mockResolvedValue(big);
     renderOrders();
     await screen.findByText(/RF-100000/);
-    expect(screen.getAllByRole('combobox')).toHaveLength(500); // todas, sin paginar
+    // H-04 fixed: el DOM se acota a una página (no 500 cards a la vez).
+    expect(screen.getAllByRole('combobox')).toHaveLength(20);
+    expect(screen.getByText('Página 1 de 25')).toBeInTheDocument();
+
+    // La búsqueda acota el listado a la orden buscada.
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar pedidos' }), { target: { value: 'RF-100007' } });
+    await waitFor(() => expect(screen.getAllByRole('combobox')).toHaveLength(1));
+    expect(screen.getByText('RF-100007 · Cliente 7')).toBeInTheDocument();
   });
 });
