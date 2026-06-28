@@ -120,7 +120,7 @@ export default function CheckoutModal() {
 
               <div className="flex flex-col gap-2 mt-[6px] pt-[14px] border-t border-line">
                 <Row label="Subtotal" value={money(q.subtotal)} />
-                {method === 'transfer' && <Row label="Descuento transferencia" value={`− ${money(q.transferDiscount)}`} gold />}
+                {method === 'transfer' && q.transferDiscount > 0 && <Row label="Descuento transferencia" value={`− ${money(q.transferDiscount)}`} gold />}
                 <Row label="Envío" value="Gratis" gold />
                 <div className="flex justify-between items-baseline mt-1"><span className="font-display tracking-[0.1em] uppercase text-[15px]">Total</span><span className="font-display font-black text-[28px]">{money(total)}</span></div>
               </div>
@@ -209,7 +209,8 @@ function Field({ label, children, className = '', invalid, errorId }: {
   );
 }
 function Row({ label, value, gold }: { label: string; value: string; gold?: boolean }) {
-  return <div className={`flex justify-between text-[14px] ${gold ? 'text-gold' : 'text-mut'}`}><span>{label}</span><span className="capitalize">{value}</span></div>;
+  // No `capitalize`: it mangled case-sensitive bank aliases like "TEST.alias.rf" → "TEST.Alias.Rf" (E-01).
+  return <div className={`flex justify-between text-[14px] ${gold ? 'text-gold' : 'text-mut'}`}><span>{label}</span><span>{value}</span></div>;
 }
 function PayOption({ active, onClick, title, sub, badge }: { active: boolean; onClick: () => void; title: string; sub: string; badge?: string }) {
   return (

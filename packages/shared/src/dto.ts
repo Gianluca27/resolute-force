@@ -9,9 +9,11 @@ export type Size = (typeof SIZES)[number];
 
 export interface AdminProductDTO extends ProductDTO { active: boolean; sortOrder: number; imagePublicId: string | null; updatedAt: string; }
 
-export interface DropDTO { targetAt: string; visible: boolean; title: string; teaser: string; }
+// updatedAt: optimistic-lock token round-tripped by admin config forms (H-06). Optional: public
+// readers ignore it, and writers that omit it just skip the conflict check.
+export interface DropDTO { targetAt: string; visible: boolean; title: string; teaser: string; updatedAt?: string; }
 export interface ContentDTO {
   marquee: string[]; heroKicker: string; heroTitle1: string; heroTitle2: string; heroSubtitle: string;
   transferDiscountPct: number; bankAlias: string; bankCbu: string;
-  contactWhatsapp: string; contactInstagram: string; contactEmail: string; contactLocation: string;
+  contactWhatsapp: string; contactInstagram: string; contactEmail: string; contactLocation: string; updatedAt?: string;
 }

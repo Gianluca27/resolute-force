@@ -6,7 +6,9 @@ const inputCls = 'bg-card border border-line2 rounded-[3px] text-tx px-[14px] py
 
 // Convert a UTC instant to the local wall-clock string a datetime-local input expects (and back on save).
 const toLocalInput = (iso: string) => {
+  if (!iso) return '';
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return ''; // guard: empty/cleared field would throw on toISOString (H-01)
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 };
 
@@ -20,7 +22,7 @@ export default function DropConfig() {
     <form
       onSubmit={async (e) => {
         e.preventDefault(); setErr(''); setMsg('');
-        try { await adminApi.putDrop(d); setMsg('Guardado ✓'); }
+        try { setD(await adminApi.putDrop(d)); setMsg('Guardado ✓'); } // adopt fresh updatedAt so the next save isn't a false conflict (H-06)
         catch (e2) { setErr(e2 instanceof Error ? e2.message : 'No se pudo guardar'); }
       }}
       className="flex flex-col gap-4 max-w-[520px]"
@@ -29,7 +31,7 @@ export default function DropConfig() {
       {msg && <div className="text-gold text-[13px] uppercase font-display">{msg}</div>}
       {err && <div className="text-red text-[13px] uppercase font-display">{err}</div>}
       <label className="flex flex-col gap-1 text-mut text-[12px] uppercase font-display">Fecha objetivo
-        <input aria-label="Fecha objetivo" className={inputCls} type="datetime-local" value={toLocalInput(d.targetAt)} onChange={(e) => setD({ ...d, targetAt: new Date(e.target.value).toISOString() })} />
+        <input aria-label="Fecha objetivo" className={inputCls} type="datetime-local" value={toLocalInput(d.targetAt)} onChange={(e) => setD({ ...d, targetAt: e.target.value ? new Date(e.target.value).toISOString() : '' })} />
       </label>
       <input aria-label="Título" className={inputCls} value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} placeholder="Título" />
       <textarea aria-label="Teaser" className={inputCls} value={d.teaser} onChange={(e) => setD({ ...d, teaser: e.target.value })} placeholder="Teaser" rows={3} />
