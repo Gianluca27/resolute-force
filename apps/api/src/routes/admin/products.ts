@@ -10,6 +10,21 @@ const upload = multer({
   // Only accept real image uploads — reject anything else before it reaches Cloudinary.
   fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith('image/')),
 });
+
+// Run multer and translate its errors to proper client codes instead of letting them fall to a 500.
+// A file over the limit is a client error (H-08) → 413, not a server failure.
+const uploadImageField: import('express').RequestHandler = (req, res, next) => {
+  upload.single('image')(req, res, (err: unknown) => {
+    if (err) {
+      if ((err as { code?: string }).code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ error: 'La imagen supera el límite de 6 MB' });
+      }
+      return next(err);
+    }
+    next();
+  });
+};
+
 export const adminProductsRouter = Router();
 
 adminProductsRouter.get('/', async (_req, res, next) => { try { res.json(await listAll()); } catch (e) { next(e); } });
@@ -30,7 +45,7 @@ adminProductsRouter.delete('/:id', async (req, res, next) => {
   try { await deleteProduct(req.params.id); res.json({ ok: true }); } catch (e) { next(e); }
 });
 
-adminProductsRouter.post('/:id/image', upload.single('image'), async (req, res, next) => {
+adminProductsRouter.post('/:id/image', uploadImageField, async (req, res, next) => {
   if (!req.file) return res.status(400).json({ error: 'Imagen inválida o ausente (solo se aceptan imágenes)' });
   try {
     const { url, publicId } = await uploadImage(req.file.buffer);

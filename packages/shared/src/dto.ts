@@ -7,7 +7,7 @@ export interface ProductDTO { id: string; slug: string; line: string; color: str
 export const SIZES = ['S', 'M', 'L', 'XL'] as const;
 export type Size = (typeof SIZES)[number];
 
-export interface AdminProductDTO extends ProductDTO { active: boolean; sortOrder: number; imagePublicId: string | null; }
+export interface AdminProductDTO extends ProductDTO { active: boolean; sortOrder: number; imagePublicId: string | null; updatedAt: string; }
 
 export interface DropDTO { targetAt: string; visible: boolean; title: string; teaser: string; }
 export interface ContentDTO {

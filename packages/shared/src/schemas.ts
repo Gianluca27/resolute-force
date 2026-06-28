@@ -24,14 +24,18 @@ export const checkoutQuoteSchema = z.object({ items: z.array(cartLineSchema).min
 
 export const variantInputSchema = z.object({ size: z.enum(SIZES), stock: z.number().int().min(0) });
 export const productInputSchema = z.object({
-  slug: z.string().trim().min(1),
-  line: z.string().trim().min(1),
-  color: z.string().trim().min(1),
-  dotColor: z.string().trim().min(1),
-  tag: z.string().trim().nullable().optional(),
+  // Upper bounds (H-09): keep strings sane so a 5000-char slug can't break layout or abuse storage.
+  slug: z.string().trim().min(1).max(120),
+  line: z.string().trim().min(1).max(80),
+  color: z.string().trim().min(1).max(80),
+  dotColor: z.string().trim().min(1).max(32),
+  // Normalize "no tag" to a single representation (H-07): blank/whitespace/omitted all become null.
+  tag: z.string().trim().max(40).nullable().optional().transform((v) => (v ? v : null)),
   price: z.number().int().min(0),
   active: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
   sizes: z.array(variantInputSchema).min(1),
+  // Optimistic concurrency token (H-01): when present, the edit is rejected if the row changed.
+  expectedUpdatedAt: z.string().datetime().optional(),
 });
 export type ProductInput = z.infer<typeof productInputSchema>;
