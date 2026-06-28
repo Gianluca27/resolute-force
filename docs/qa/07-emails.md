@@ -14,11 +14,11 @@ The mailer **only delivers** when `SMTP_HOST` **and** `SMTP_USER` are both non-e
 - [ ] Mailer enabled when both vars set → real delivery; `secure` only at port 465; `from` = `MAIL_FROM` (MAIL-003, 004, 005)
 - [ ] `sendMail` no-ops on empty recipient; skip log suppressed under `NODE_ENV=test` (MAIL-006, 007)
 - [ ] Triggers fire paid emails: card approved, wallet/webhook approved, admin mark-paid, admin mark-shipped (MAIL-008–011)
-- [ ] Non-triggers: webhook reversal, out-of-stock card capture → NO paid email (MAIL-012, 013)
+- [ ] Reversal (refund/chargeback/cancel) sends a customer+admin **cancellation** email (not the paid email), once even under double reversal; out-of-stock card capture → NO email (MAIL-012, 012b, 013)
 - [ ] Idempotency: fires exactly once on transition; replay/duplicate → no second email; same-status save → none (MAIL-014, 015, 016)
 - [ ] Admin email recipient/subject/body; empty `ADMIN_NOTIFY_EMAIL` skips it; phone `—` when absent (MAIL-017, 018, 019)
 - [ ] Customer email recipient/subject/body/footer; totals per method; items table (MAIL-020, 021, 022)
-- [ ] Transfer bank block: absent by default **CD-11**; present when alias set; CBU conditional; amount = transfer total (MAIL-023–026)
+- [ ] Transfer bank block: present by default (seed placeholder alias), absent once alias cleared **CD-11**; present when alias set; CBU conditional; amount = transfer total (MAIL-023, 023b, 024–026)
 - [ ] Failure isolation: never blocks payment; `allSettled` isolates admin vs customer; no retry (MAIL-027, 028, 029)
 - [ ] Security: `escapeHtml` neutralizes injection; all four chars escaped; invalid customer email blocked upstream (MAIL-030, 031, 032)
 
@@ -243,14 +243,22 @@ The mailer **only delivers** when `SMTP_HOST` **and** `SMTP_USER` are both non-e
 
 ## Transfer bank block
 
-### TC-MAIL-023: CD-11 — transfer email has NO bank block on default seed
+### TC-MAIL-023: CD-11 — transfer email has NO bank block when `bankAlias` is empty
 - **Priority:** P0
 - **Type:** Functional
-- **Preconditions:** Mailer enabled. **Default seed:** `SiteContent.bankAlias = ""`, `bankCbu = ""` (not yet set in admin Contenido).
+- **Preconditions:** Mailer enabled. `SiteContent.bankAlias = ""`, `bankCbu = ""` (alias cleared in admin Contenido). **NOTE:** the default seed ships a **placeholder** `bankAlias = "resolute.force"`, `bankCbu = ""` (intentional usable default, decided in REPORTE-07 H-01) — so to exercise the no-block case you must first clear the alias in Contenido. With the untouched seed the block IS present (see TC-MAIL-023b).
 - **Steps → Expected:**
-  1. Place a transfer order (`POST /api/orders/transfer`) → **Expected:** customer email delivers, but contains **no** "Para confirmar, transferí…" block (bankBlock is `''` because `bank?.bankAlias` is falsy).
+  1. Place a transfer order (`POST /api/orders/transfer`) with `bankAlias` empty → **Expected:** customer email delivers, but contains **no** "Para confirmar, transferí…" block (bankBlock is `''` because `bank?.bankAlias` is falsy).
   2. Consequence → **Expected:** customer receives a confirmation with a total but **no alias/CBU to pay to** — they cannot complete the transfer.
-- **Notes:** **CD-11** (high value). The transfer route reads `bankAlias`/`bankCbu` from `SiteContent` at creation time and passes them through; defaults are empty. File a bug if the empty default is reachable in a real deploy. Same gap exists in the confirmation UI (see Module 5/11).
+- **Notes:** **CD-11** (high value). The transfer route reads `bankAlias`/`bankCbu` from `SiteContent` at creation time and passes them through. The empty default is no longer reachable in seed (placeholder ships), but stays reachable if an admin clears the field. Same gap exists in the confirmation UI (see Module 5/11).
+
+### TC-MAIL-023b: default seed ships a placeholder alias → bank block IS present
+- **Priority:** P1
+- **Type:** Functional / Data
+- **Preconditions:** Mailer enabled. Untouched default seed (`bankAlias = "resolute.force"`, `bankCbu = ""`).
+- **Steps → Expected:**
+  1. Place a transfer order → **Expected:** customer email **includes** the bank block `…transferí $27.000 a — alias resolute.force —…` with the `· CBU …` segment omitted (`bankCbu` empty).
+- **Notes:** REPORTE-07 H-01. `resolute.force` is a placeholder, not a real account — a deploy must replace it in admin Contenido before enabling transfer, or customers get instructions to pay a non-existent alias.
 
 ### TC-MAIL-024: Transfer email shows bank block once alias is set in Contenido
 - **Priority:** P0

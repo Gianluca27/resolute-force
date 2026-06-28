@@ -35,7 +35,7 @@ export async function createOrder(input: { items: CartLineInput[]; customer: Cus
   return { order, quote: q };
 }
 
-export async function markPaidByOrderNo(orderNo: string, mpPaymentId: string) {
+export async function markPaidByOrderNo(orderNo: string, mpPaymentId: string, notifyStatus: OrderStatus = 'paid') {
   // Persist the payment id up front (outside the tx) so a stock-failure rollback can never lose it —
   // the charge must stay traceable/refundable even when the order can't be fulfilled.
   await prisma.order.updateMany({ where: { orderNo, mpPaymentId: null }, data: { mpPaymentId } });
@@ -65,7 +65,7 @@ export async function markPaidByOrderNo(orderNo: string, mpPaymentId: string) {
   });
 
   if (transitioned) {
-    void import('./notify.js').then((m) => m.notifyOrderPaid(orderNo)).catch((e) => console.error('[notify:paid]', e));
+    void import('./notify.js').then((m) => m.notifyOrderPaid(orderNo, notifyStatus)).catch((e) => console.error('[notify:paid]', e));
   }
   return order;
 }
@@ -79,15 +79,28 @@ export class InvalidStatusTransition extends Error {
 
 /** Reverse a previously-confirmed order (MP refund/chargeback/cancellation): restock + cancel. No-op if not stock-held. */
 export async function reverseOrderIfPaid(orderNo: string): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { orderNo }, include: { items: true } });
-    if (!order || !STOCK_HELD.has(order.status as OrderStatus)) return;
+  const reversed = await prisma.$transaction(async (tx) => {
+    // Atomic claim: flip stock-held → cancelled exactly once. Mirrors the decrement guard in
+    // markPaidByOrderNo so concurrent reversals (e.g. refunded + charged_back for the same payment)
+    // see count===0 and skip the restock — never double-restock and inflate inventory.
+    const claimed = await tx.order.updateMany({
+      where: { orderNo, status: { in: ['paid', 'shipped'] } },
+      data: { status: 'cancelled' },
+    });
+    if (claimed.count !== 1) return false;
+    const order = await tx.order.findUniqueOrThrow({ where: { orderNo }, include: { items: true } });
     for (const it of order.items) {
       if (!it.productId) continue;
       await tx.variant.updateMany({ where: { productId: it.productId, size: it.size }, data: { stock: { increment: it.qty } } });
     }
-    await tx.order.update({ where: { orderNo }, data: { status: 'cancelled' } });
+    return true;
   });
+
+  // Only the winning reversal notifies — the count!==1 losers already returned false, so the buyer
+  // gets exactly one "pedido cancelado" email even under concurrent refund+chargeback (H-02).
+  if (reversed) {
+    void import('./notify.js').then((m) => m.notifyOrderReversed(orderNo)).catch((e) => console.error('[notify:reversed]', e));
+  }
 }
 
 /** Return decremented stock to inventory for every line of an order. */
@@ -118,7 +131,8 @@ export async function changeOrderStatus(orderId: string, to: OrderStatus) {
 
   if (!STOCK_HELD.has(from) && STOCK_HELD.has(to)) {
     // Reserve stock via the atomic, oversell-guarded claim, then land on the requested state.
-    await markPaidByOrderNo(order.orderNo, order.mpPaymentId ?? 'manual');
+    // Pass `to` so the admin email header shows the final status, not the transient 'paid' (H-05).
+    await markPaidByOrderNo(order.orderNo, order.mpPaymentId ?? 'manual', to);
     if (to !== 'paid') await prisma.order.update({ where: { id: orderId }, data: { status: to } });
   } else if (STOCK_HELD.has(from) && to === 'cancelled') {
     await restockOrder(order.orderNo);
