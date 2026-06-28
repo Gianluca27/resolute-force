@@ -1,0 +1,25 @@
+# Local Postgres for dev + tests (replaces the old SQLite file DB).
+#   docker compose up -d
+# Dev DB:  postgresql://postgres:postgres@localhost:5432/resolute_dev?schema=public
+# Test DB: postgresql://postgres:postgres@localhost:5432/resolute_test?schema=public  (auto-reset by vitest)
+services:
+  postgres:
+    image: postgres:16
+    container_name: resolute-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: resolute_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - resolute_pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  resolute_pgdata:
