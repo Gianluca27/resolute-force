@@ -8,8 +8,10 @@ function hasValidSession(token: string | null): boolean {
   if (!token) return false;
   const parts = token.split('.');
   if (parts.length !== 3) return false;
+  const payload = parts[1];
+  if (!payload) return false;
   try {
-    const json = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
     const { exp } = JSON.parse(json) as { exp?: number };
     if (typeof exp !== 'number') return false;
     return exp * 1000 > Date.now();
