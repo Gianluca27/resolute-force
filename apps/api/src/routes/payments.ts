@@ -102,7 +102,13 @@ paymentsRouter.post('/webhook', async (req, res) => {
       }
     }
   } catch (e) {
-    console.error('[webhook]', e);
+    // Unknown external_reference (stale or forged id MP keeps retrying) surfaces as Prisma P2025.
+    // It's expected noise, not an infra failure — log at warn so real errors stay visible in alerts.
+    if (e && typeof e === 'object' && (e as { code?: string }).code === 'P2025') {
+      console.warn('[webhook] external_reference desconocido', (e as { meta?: unknown }).meta);
+    } else {
+      console.error('[webhook]', e);
+    }
   }
   res.sendStatus(200); // always 200 so MP stops retrying
 });

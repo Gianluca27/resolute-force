@@ -7,7 +7,7 @@
 - **Password:** `bcryptjs.compare` against `AdminUser.passwordHash` (cost 12). Unknown email still runs `bcrypt.compare` against a constant `DUMMY_HASH` → constant-time, no user enumeration.
 - **Login** `POST /api/admin/login`: non-string body → `400 {error:'Datos inválidos'}`; unknown email OR bad password → `401 {error:'Credenciales inválidas'}`; success → `{ token, email }`. Rate limit **10 / 15 min** → `429 {error:'Demasiados intentos de acceso. Probá de nuevo más tarde.'}`.
 - **Guard** `requireAdmin`: missing/non-`Bearer ` Authorization → `401 {error:'No autorizado'}`; bad/expired token → `401 {error:'Sesión inválida o expirada'}`. Applied via `adminRouter.use(requireAdmin)` **after** `/login`, so every `/api/admin/*` except `/login` is protected.
-- **Web:** session in `localStorage["rf-admin"]` = `{token,email}`. `ProtectedRoute` checks token **existence only** (not validity) → **CD-7**. `adminApi` on any `401` → `logout()` + throws `"Sesión expirada"`.
+- **Web:** session in `localStorage["rf-admin"]` = `{token,email}`. `ProtectedRoute` validates token **structure + `exp`** client-side (CD-7 fixed) → redirects to login on a malformed/expired token. `adminApi` on a `401` from an authed call → `logout()` + throws `"Sesión expirada"`; on `/login` it propagates the API error (e.g. `Credenciales inválidas`).
 
 **Coverage checklist:**
 - [ ] Login success returns `{token,email}`; token is HS256 with `{sub,email}` and ~12h expiry (AUTH-001, 002)
@@ -19,7 +19,7 @@
 - [ ] Valid token reaches all `/api/admin/*`; no-token blocked on each; `/login` itself unprotected (AUTH-018, 019, 020)
 - [ ] No role tiers — any valid token is full admin; admin not seeded when `ADMIN_PASSWORD` empty (AUTH-021, 022)
 - [ ] Web: `rf-admin` persists across reload; redirect when no token; auto-logout on 401; logout clears session; success navigates (AUTH-023, 024, 025, 027, 028)
-- [ ] **CD-7:** expired/tampered token renders admin UI until first API 401 (AUTH-026)
+- [ ] **CD-7 (fixed):** malformed/expired token → ProtectedRoute redirects to login; valid JWT renders the shell (AUTH-026)
 - [ ] A11y: form labels, focus, error display; password masked (AUTH-029, 030, 031)
 
 ---
@@ -92,8 +92,8 @@
 - **Preconditions:** API running.
 - **Steps → Expected:**
   1. `POST /api/admin/login` with no body / no `Content-Type: application/json` → **Expected:** `req.body` is `undefined`; `req.body ?? {}` yields `{}`; both fields `undefined` → 400 `{error:'Datos inválidos'}`. No crash.
-  2. Send malformed JSON → **Expected:** body-parser error handled by the global error middleware (4xx), not a 500 stack leak.
-- **Notes:** `const { email, password } = req.body ?? {}` defends against a null body.
+  2. Send malformed JSON → **Expected:** HTTP **400** `{error:'JSON inválido'}` — the global error middleware respects the body-parser `err.status` (no 500, no stack leak). *(H-01 fixed.)*
+- **Notes:** `const { email, password } = req.body ?? {}` defends against a null body. `errorHandler` maps a 4xx `err.status`/`err.type` (e.g. `entity.parse.failed`) to the right status with a safe generic message.
 
 ### TC-AUTH-008: Brute-force rate limit — 10 attempts allowed, 11th → 429
 - **Priority:** P1
@@ -149,9 +149,9 @@
 - **Type:** Negative
 - **Preconditions:** API running.
 - **Steps → Expected:**
-  1. `Authorization: Bearer ` (prefix present, empty token) → **Expected:** scheme check passes, `verifyAdmin('')` throws → 401 `{error:'Sesión inválida o expirada'}`.
+  1. `Authorization: Bearer ` (prefix + empty token) → **Expected:** 401 `{error:'No autorizado'}`. *(H-02:* the HTTP layer trims the trailing whitespace → the header arrives as `Bearer`, failing `startsWith('Bearer ')`, so `verifyAdmin('')` is unreachable via a real header. Same 401, different message — no security impact.)*
   2. `Authorization: Bearer not.a.jwt` → **Expected:** 401 `{error:'Sesión inválida o expirada'}`.
-- **Notes:** Once the `Bearer ` prefix matches, any verification failure produces the *Sesión inválida* message (not *No autorizado*).
+- **Notes:** Once the `Bearer ` prefix matches a non-empty token, any verification failure produces the *Sesión inválida* message (not *No autorizado*).
 
 ### TC-AUTH-014: Malformed JWT structure → 401 Sesión inválida o expirada
 - **Priority:** P1
@@ -167,7 +167,7 @@
 - **Preconditions:** A token whose `exp` is in the past (mint one with a short/negative expiry using the same `JWT_SECRET`, or reuse a >12h-old token).
 - **Steps → Expected:**
   1. `GET /api/admin/me` with the expired token → **Expected:** 401 `{error:'Sesión inválida o expirada'}` (`jwt.verify` throws `TokenExpiredError`).
-- **Notes:** Expiry is enforced **server-side only**. The web client does NOT pre-check expiry (see CD-7 / AUTH-026). This is the server backstop that ultimately blocks an expired session.
+- **Notes:** Expiry is the **server-side backstop**. The web client now also pre-checks `exp` in `ProtectedRoute` (CD-7 fixed, AUTH-026), but this server check is the authoritative one that blocks an expired session.
 
 ### TC-AUTH-016: Tampered signature → 401
 - **Priority:** P0
@@ -262,14 +262,14 @@
   2. Observe the UI → **Expected:** with the token now cleared, `ProtectedRoute` redirects to `/admin/login` on the next render/navigation.
 - **Notes:** This is the real expiry enforcement on the client — reactive (on 401), not proactive.
 
-### TC-AUTH-026: CD-7 — expired/tampered token still renders the admin UI until the first API 401
+### TC-AUTH-026: CD-7 (fixed) — malformed/expired token redirects to login; valid JWT renders the shell
 - **Priority:** P1
 - **Type:** Security
-- **Preconditions:** Web app running. Plant a **non-falsy but invalid** token in `localStorage["rf-admin"]` (e.g. an expired JWT or `{token:"garbage", email:"x"}`).
+- **Preconditions:** Web app running.
 - **Steps → Expected:**
-  1. Navigate to `/admin` → **Expected (defect):** `ProtectedRoute` sees a truthy `token` and **renders the admin shell** — it does NOT validate or check expiry.
-  2. Wait for the first data call (or trigger one) → **Expected:** API returns 401 → auto-logout (per AUTH-025) → redirect to login.
-- **Notes:** **CD-7.** The client guard checks token **existence only**. No data is actually exposed (every API call is server-verified), but the UI briefly renders for an invalid session — confirm and file. Mitigation would be a client-side `exp` check in `ProtectedRoute`.
+  1. Plant a **truthy but invalid** token in `localStorage["rf-admin"]` (e.g. `{token:"garbage", email:"x"}` or an expired JWT) and navigate to `/admin` → **Expected:** `ProtectedRoute` validates structure + `exp` and **redirects to `/admin/login`** — the shell does not render.
+  2. Plant a structurally-valid JWT with a future `exp` and navigate to `/admin` → **Expected:** the admin shell renders.
+- **Notes:** **CD-7 fixed.** `ProtectedRoute` now decodes the JWT payload (no signature check) and rejects a non-3-segment token, a missing/non-numeric `exp`, or an expired one. The server remains authoritative (every API call is verified server-side); this just removes the brief shell flash for an invalid session.
 
 ### TC-AUTH-027: Logout ("Salir") clears the session and returns to login
 - **Priority:** P1
@@ -299,7 +299,7 @@
 - **Preconditions:** Web app at `/admin/login`.
 - **Steps → Expected:**
   1. Inspect the inputs → **Expected:** email input has `aria-label="Email"` (`type="email"`, `autoComplete="username"`); password input has `aria-label="Contraseña"` (`type="password"`, `autoComplete="current-password"`); submit button text is **Ingresar**.
-  2. Submit invalid credentials → **Expected:** an error message renders above the inputs (uppercase, red) carrying the thrown message (e.g. `Sesión expirada` / `Credenciales inválidas` per the API/adminApi mapping).
+  2. Submit invalid credentials → **Expected:** an error message renders above the inputs (uppercase, red) carrying the real API message **`Credenciales inválidas`** (H-03 fixed — login no longer rewrites its 401 to `Sesión expirada`).
   3. Keyboard-only: Tab through Email → Contraseña → Ingresar and submit with Enter → **Expected:** logical focus order; form submits on Enter (it's a real `<form onSubmit>`).
 - **Notes:** Inputs rely on `aria-label` (no visible `<label>` element) — acceptable for screen readers; placeholders duplicate the labels. Verify focus is visible (`focus:border-gold`).
 
@@ -316,6 +316,6 @@
 - **Type:** UI
 - **Preconditions:** Web app at `/admin/login`.
 - **Steps → Expected:**
-  1. Submit wrong credentials → **Expected:** error block appears with the failure message; the user stays on `/admin/login`.
+  1. Submit wrong credentials → **Expected:** error block appears with `Credenciales inválidas` (the real API error); the user stays on `/admin/login`.
   2. Submit again → **Expected:** `setErr(null)` clears the previous error at the start of each submit (no stale stacking); on the new failure the fresh message shows.
 - **Notes:** `submit` resets `err` to null before each attempt and only sets it in the `catch`.
