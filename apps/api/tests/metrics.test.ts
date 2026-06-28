@@ -47,6 +47,19 @@ it('conversionRate counts only paid orders inside the 30-day visit window', asyn
   expect(m.conversionRate).toBe(0); // all-time paid=1 would wrongly give 100
 });
 
+it('clamps conversionRate to 100% when paid orders exceed tracked visits', async () => {
+  const navyId = (await prisma.product.findUniqueOrThrow({ where: { slug: 'champion-mentality-azul-marino' } })).id;
+  for (const ref of ['P1', 'P2']) {
+    const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer, method: 'card' });
+    await markPaidByOrderNo(order.orderNo, ref);
+  }
+  await prisma.visit.create({ data: { path: '/' } });
+
+  const m = await getMetrics();
+  expect(m.visits30).toBe(1);
+  expect(m.conversionRate).toBe(100); // 2 paid / 1 visit would be 200 without the clamp
+});
+
 it('lowStock excludes variants of inactive products', async () => {
   const navy = await prisma.product.findUniqueOrThrow({ where: { slug: 'champion-mentality-azul-marino' } });
   await prisma.variant.updateMany({ where: { productId: navy.id, size: 'S' }, data: { stock: 1 } });

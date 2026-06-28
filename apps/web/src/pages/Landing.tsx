@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useProducts, useDrop, useContent } from '../hooks/useCatalog';
 import { useCart, cartCount } from '../store/cart';
 import { useToast } from '../store/toast';
@@ -16,7 +16,11 @@ import CheckoutModal from '../components/CheckoutModal';
 import Toast from '../components/Toast';
 
 export default function Landing() {
+  // Guard against React StrictMode's double-invoke in dev, which would double-count the visit.
+  const tracked = useRef(false);
   useEffect(() => {
+    if (tracked.current) return;
+    tracked.current = true;
     const base = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
     fetch(`${base}/api/track`, {
       method: 'POST',

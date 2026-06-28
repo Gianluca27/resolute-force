@@ -13,6 +13,10 @@ export interface Metrics {
 }
 
 const PAID = ['paid', 'shipped'];
+// Business operates in Argentina (UTC-3, no DST). Bucket the daily series by AR-local
+// date so "today" matches the business day, not the UTC day (which rolls 3h early).
+const AR_OFFSET_MS = 3 * 3600000;
+const localDate = (ms: number) => new Date(ms - AR_OFFSET_MS).toISOString().slice(0, 10);
 
 export async function getMetrics(nowMs = Date.now()): Promise<Metrics> {
   const orders = await prisma.order.findMany({ include: { items: true } });
@@ -31,8 +35,8 @@ export async function getMetrics(nowMs = Date.now()): Promise<Metrics> {
   const revenueLast30: { date: string; total: number }[] = [];
   for (let d = 29; d >= 0; d--) {
     const start = nowMs - d * dayMs;
-    const date = new Date(start).toISOString().slice(0, 10);
-    const total = paid.filter((o) => o.createdAt.toISOString().slice(0, 10) === date).reduce((a, o) => a + o.total, 0);
+    const date = localDate(start);
+    const total = paid.filter((o) => localDate(o.createdAt.getTime()) === date).reduce((a, o) => a + o.total, 0);
     revenueLast30.push({ date, total });
   }
 
@@ -43,7 +47,9 @@ export async function getMetrics(nowMs = Date.now()): Promise<Metrics> {
   const visits30 = await prisma.visit.count({ where: { createdAt: { gte: new Date(windowStart) } } });
   // Conversion must compare like-for-like windows: paid orders in the last 30 days ÷ visits in the last 30 days.
   const paidLast30 = paid.filter((o) => o.createdAt.getTime() >= windowStart).length;
-  const conversionRate = visits30 ? Math.round((paidLast30 / visits30) * 1000) / 10 : 0;
+  // Clamp to 100%: paid orders without a tracked visit (direct payments, filtered
+  // traffic) would otherwise yield a logically impossible >100% conversion.
+  const conversionRate = visits30 ? Math.min(100, Math.round((paidLast30 / visits30) * 1000) / 10) : 0;
 
   return { revenue, ordersByStatus, unitsSold, avgOrderValue, topProducts, revenueLast30, lowStock, visits30, conversionRate };
 }

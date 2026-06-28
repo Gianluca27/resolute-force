@@ -13,10 +13,24 @@ import { ordersRouter } from './routes/orders.js';
 import { adminRouter } from './routes/admin/index.js';
 import { trackRouter } from './routes/track.js';
 
+// Coerce TRUST_PROXY into a value Express accepts: a hop count (number), a boolean,
+// or a string preset/IP-list. Default false so a misconfigured deploy can't be tricked
+// into trusting X-Forwarded-For from arbitrary clients.
+function parseTrustProxy(raw: string): boolean | number | string {
+  const v = raw.trim();
+  if (v === '' || v === 'false' || v === 'off') return false;
+  if (v === 'true') return true;
+  if (/^\d+$/.test(v)) return Number(v);
+  return v;
+}
+
 export function createApp() {
   const app = express();
   // Path routing is case-sensitive (slugs already are) — `/API/products` must not alias `/api/products`.
   app.set('case sensitive routing', true);
+  // Behind a reverse proxy/LB, req.ip must come from X-Forwarded-For for per-IP rate
+  // limiting to be effective — but only as many hops as we actually trust.
+  app.set('trust proxy', parseTrustProxy(env.TRUST_PROXY));
   app.use(helmet());
   app.use(cors({ origin: env.PUBLIC_WEB_URL, credentials: true }));
   app.use(express.json({ limit: '1mb' }));

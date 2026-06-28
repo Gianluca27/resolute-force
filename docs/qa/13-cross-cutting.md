@@ -7,11 +7,11 @@
 - [ ] `X-Powered-By` is never sent
 - [ ] CORS echoes `Access-Control-Allow-Origin` only for the configured `PUBLIC_WEB_URL`; credentials allowed
 - [ ] Disallowed `Origin` gets **no** ACAO echo; preflight `OPTIONS` is handled
-- [ ] Request body `> 1mb` → `413`; malformed JSON handled by the error path
+- [ ] Request body `> 1mb` → `413 {error:"Solicitud demasiado grande"}`; malformed JSON → `400 {error:"JSON inválido"}` (error path respects 4xx)
 - [ ] `/api` limiter: 300 ok / 301st `429 {error:"Demasiadas solicitudes. Probá de nuevo más tarde."}`; standard headers; window reset
 - [ ] `/api/admin/login` limiter: 10 ok / 11th `429 {error:"Demasiados intentos de acceso. Probá de nuevo más tarde."}`
 - [ ] Error envelope `{error:...}`; `NODE_ENV=production` → generic `"Error interno del servidor"` (no message/stack leak); non-prod → real message
-- [ ] Global 404 `{error:"Not found"}`; CD-2 mixed-language 404s
+- [ ] Global 404 `{error:"No encontrado"}` (Spanish); CD-2 resolved — global and product 404s both es-AR
 - [ ] Prod boot guards: refuse boot on dev-default `JWT_SECRET`, `<32`-char secret, or placeholder `MP_ACCESS_TOKEN`; boot with real secrets
 - [ ] es-AR money formatting (dot thousands) incl. large numbers; `<html lang="es-AR">`
 - [ ] Visit tracking: happy / missing-path / oversized (slice 200) / malformed-type / DB-error-swallowed; always `{ok:true}`; public
@@ -113,8 +113,8 @@
 - **Type:** Negative
 - **Preconditions:** API running, `NODE_ENV` non-production.
 - **Steps → Expected:**
-  1. `curl -i -X POST -H "Content-Type: application/json" --data '{"path": ' http://localhost:4000/api/track` (truncated/invalid JSON) → **Expected:** a JSON error envelope `{"error": ...}`, **no** HTML error page, no process crash.
-- **Notes:** The body-parser `SyntaxError` reaches the global `errorHandler`, which always sets status **500** (it does not inspect `err.status`, so the body-parser's `400` is overridden). Record whether the team wants a `400` here — flag as a minor robustness gap if so. In production the message is masked (TC-XC-019).
+  1. `curl -i -X POST -H "Content-Type: application/json" --data '{"path": ' http://localhost:4000/api/track` (truncated/invalid JSON) → **Expected:** HTTP `400`; body `{"error":"JSON inválido"}`; **no** HTML error page, no process crash.
+- **Notes:** The body-parser `SyntaxError` reaches the global `errorHandler`, which now respects the body-parser's `4xx` status (`entity.parse.failed` → `400 "JSON inválido"`) instead of masking it as a `500`. 4xx client errors are not masked in prod (only `500`s are — TC-XC-019).
 
 ---
 
@@ -202,17 +202,17 @@
 - **Type:** Negative
 - **Preconditions:** API running.
 - **Steps → Expected:**
-  1. `GET /api/nope` → **Expected:** HTTP `404`; body `{"error":"Not found"}`; JSON content-type.
+  1. `GET /api/nope` → **Expected:** HTTP `404`; body `{"error":"No encontrado"}`; JSON content-type.
 
-### TC-XC-022: 404 bodies use mixed languages (CD-2)
+### TC-XC-022: 404 bodies are consistently Spanish (CD-2 resolved)
 - **Priority:** P3
 - **Type:** Functional
 - **Preconditions:** Seeded DB.
 - **Steps → Expected:**
   1. `GET /api/products/unknown-slug` → **Expected:** `{"error":"Producto no encontrado"}` (Spanish).
-  2. `GET /api/unknown` → **Expected:** `{"error":"Not found"}` (English).
-  3. Compare → **Expected:** confirm the language inconsistency across 404s.
-- **Notes:** CD-2 (also in Module 1). The whole app is es-AR, so the English global 404 is the odd one out.
+  2. `GET /api/unknown` → **Expected:** `{"error":"No encontrado"}` (Spanish).
+  3. Compare → **Expected:** both 404 bodies are es-AR — no language inconsistency.
+- **Notes:** CD-2 (also in Module 1) is **resolved**: the global 404 is now Spanish (`"No encontrado"`), matching the rest of the es-AR app.
 
 ### TC-XC-023: Errors never return an HTML page
 - **Priority:** P2
@@ -299,8 +299,8 @@
 - **Type:** UI
 - **Preconditions:** App running.
 - **Steps → Expected:**
-  1. Sample error/UI strings (e.g. product 404 `"Producto no encontrado"`, rate-limit `"Demasiadas solicitudes..."`, seed hints `"...corré el seed"`) → **Expected:** Spanish es-AR voseo where applicable (`corré`, `Probá`).
-  2. Note the **one** known exception: global 404 `"Not found"` (English) — CD-2.
+  1. Sample error/UI strings (e.g. product 404 `"Producto no encontrado"`, global 404 `"No encontrado"`, rate-limit `"Demasiadas solicitudes..."`, seed hints `"...corré el seed"`) → **Expected:** Spanish es-AR voseo where applicable (`corré`, `Probá`).
+  2. No English exceptions remain — the global 404 is now Spanish too (CD-2 resolved).
 - **Notes:** Light i18n sweep; deep copy review is per-feature.
 
 ---
@@ -366,6 +366,7 @@
 - **Steps → Expected:**
   1. Load the landing page; watch the Network tab → **Expected:** exactly **one** `POST /api/track` on mount (not on every render, not duplicated).
   2. Navigate away and back / reload → **Expected:** one new call per mount.
+- **Notes:** A `useRef` guard in `Landing.tsx` suppresses React StrictMode's dev-only double-invoke, so dev and prod builds both fire exactly once per mount.
 
 ---
 
@@ -393,7 +394,7 @@
 - **Preconditions:** Admin login available (Module 8 setup).
 - **Steps → Expected:**
   1. Log in; decode the JWT `exp - iat` → **Expected:** ~`12h` (43200s).
-  2. Inspect a stored admin password hash → **Expected:** bcrypt with cost `12` (`$2b$12$...`).
+  2. Inspect a stored admin password hash → **Expected:** bcrypt with cost `12` (`$2a$12$...` — `bcryptjs` emits the `$2a$` prefix; functionally equivalent to `$2b$`).
 - **Notes:** Cross-references Module 8; included here as the cross-cutting auth-hardening record. The access token / secrets stay server-only.
 
 ---
@@ -427,7 +428,7 @@
 - **Type:** Negative
 - **Preconditions:** API running.
 - **Steps → Expected:**
-  1. `DELETE /api/health` → **Expected:** `404 {"error":"Not found"}` (only `GET` is defined).
+  1. `DELETE /api/health` → **Expected:** `404 {"error":"No encontrado"}` (only `GET` is defined).
   2. `PUT /api/products/champion-mentality-azul-marino` → **Expected:** `404`.
   3. `POST /api/content` → **Expected:** `404`.
 - **Notes:** No `405` is emitted — unmatched method falls through to `notFound`. Same behavior catalogued in Module 1 (TC-CAT-032).

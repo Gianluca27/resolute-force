@@ -7,6 +7,11 @@ const schema = z
   .object({
     NODE_ENV: z.string().default('development'),
     PORT: z.coerce.number().default(4000),
+    // Express `trust proxy` setting. Empty/false = no proxy (req.ip is the socket peer).
+    // Set to the number of trusted reverse proxies/LB hops in front of the API (e.g. `1`),
+    // or a comma-separated IP/subnet list / preset (e.g. `loopback`). Required for per-IP
+    // rate limiting to work behind a proxy without letting clients spoof X-Forwarded-For.
+    TRUST_PROXY: z.string().default(''),
     DATABASE_URL: z.string().default('file:./dev.db'),
     PUBLIC_WEB_URL: z.string().default('http://localhost:5173'),
     PUBLIC_API_URL: z.string().default('http://localhost:4000'),
