@@ -1,5 +1,8 @@
 export interface CartLineInput { productId: string; size: string; qty: number; }
-export interface CustomerInput { nombre: string; email: string; tel?: string; dir: string; ciudad: string; }
+export interface CustomerInput {
+  nombre: string; email: string; tel?: string;
+  calle: string; altura: string; pisoDepto?: string; cp: string; provincia: string; ciudad: string;
+}
 export interface QuoteLine { productId: string; line: string; color: string; size: string; unitPrice: number; qty: number; lineTotal: number; }
 export interface QuoteResult { lines: QuoteLine[]; subtotal: number; transferDiscount: number; totalTransfer: number; totalCard: number; }
 export interface ProductVariantDTO { size: string; stock: number; }
