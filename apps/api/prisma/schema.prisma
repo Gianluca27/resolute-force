@@ -50,9 +50,61 @@ model Order {
   total          Int
   mpPaymentId    String?
   mpPreferenceId String?
+  // Dirección estructurada para PAQ.AR (nullable: pedidos previos al checkout estructurado
+  // solo tienen address/city libres; el admin completa estos campos al generar el envío).
+  shippingStreet       String?
+  shippingStreetNumber String?
+  shippingFloor        String?
+  shippingApartment    String?
+  shippingZip          String?
+  shippingProvince     String?
+  shipment       Shipment?
   items          OrderItem[]
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+}
+
+// Envío registrado en Correo Argentino vía PAQ.AR. 1:1 con Order: si se cancela y se
+// regenera, la fila se reutiliza (el TN anterior queda solo en el historial del correo).
+model Shipment {
+  id             String   @id @default(cuid())
+  orderId        String   @unique
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  trackingNumber String   @unique
+  status         String   @default("created") // created | cancelled
+  deliveryType   String // homeDelivery | agency | locker
+  agencyId       String?
+  serviceType    String
+  weightGrams    Int
+  heightCm       Int
+  widthCm        Int
+  depthCm        Int
+  declaredValue  Int
+  paqarResponse  Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Remitente + defaults de paquete para el alta de órdenes PAQ.AR. Fila única editable en admin.
+model ShippingConfig {
+  id                 Int      @id @default(1)
+  senderName         String
+  senderEmail        String   @default("")
+  senderPhone        String   @default("")
+  senderStreet       String
+  senderStreetNumber String
+  senderFloor        String   @default("")
+  senderApartment    String   @default("")
+  senderCity         String
+  senderProvince     String
+  senderZip          String
+  defaultWeightGrams Int      @default(500)
+  defaultHeightCm    Int      @default(10)
+  defaultWidthCm     Int      @default(30)
+  defaultDepthCm     Int      @default(40)
+  defaultServiceType String   @default("CP")
+  labelFormat        String   @default("10x15")
+  updatedAt          DateTime @updatedAt
 }
 
 model OrderItem {
