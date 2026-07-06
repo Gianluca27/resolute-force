@@ -22,11 +22,16 @@ export async function createOrder(input: { items: CartLineInput[]; customer: Cus
   const discount = input.method === 'transfer' ? q.transferDiscount : 0;
   const total = input.method === 'transfer' ? q.totalTransfer : q.totalCard;
   const orderNo = await uniqueOrderNo();
+  const c = input.customer;
   const order = await prisma.order.create({
     data: {
       orderNo,
-      customerName: input.customer.nombre, customerEmail: input.customer.email, customerPhone: input.customer.tel || null,
-      address: input.customer.dir, city: input.customer.ciudad,
+      customerName: c.nombre, customerEmail: c.email, customerPhone: c.tel || null,
+      // address/city: representación legible usada en emails y listados; los campos
+      // shipping* estructurados son los que consume el alta de envío PAQ.AR.
+      address: `${c.calle} ${c.altura}${c.pisoDepto ? `, ${c.pisoDepto}` : ''}`, city: c.ciudad,
+      shippingStreet: c.calle, shippingStreetNumber: c.altura, shippingFloor: c.pisoDepto || null,
+      shippingZip: c.cp, shippingProvince: c.provincia,
       paymentMethod: input.method, status: 'pending', subtotal: q.subtotal, discount, total,
       items: { create: q.lines.map((l) => ({ productId: l.productId, line: l.line, color: l.color, size: l.size, unitPrice: l.unitPrice, qty: l.qty })) },
     },

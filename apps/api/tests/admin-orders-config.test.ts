@@ -10,7 +10,7 @@ import { prisma } from '../src/prisma.js';
 import { createOrder } from '../src/services/orders.js';
 
 const app = createApp();
-const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', dir: 'Calle 1', ciudad: 'CABA' };
+const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', calle: 'Calle 1', altura: '100', cp: '1425', provincia: 'C', ciudad: 'CABA' };
 beforeEach(async () => { await resetDb(); await seed(); });
 
 it('lists orders and marks a transfer order paid (decrementing stock)', async () => {

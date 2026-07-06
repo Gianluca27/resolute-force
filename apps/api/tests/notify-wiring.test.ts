@@ -14,7 +14,7 @@ import { createOrder, markPaidByOrderNo } from '../src/services/orders.js';
 import * as notify from '../src/services/notify.js';
 
 const app = createApp();
-const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', dir: 'Calle 1', ciudad: 'CABA' };
+const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', calle: 'Calle 1', altura: '100', cp: '1425', provincia: 'C', ciudad: 'CABA' };
 let navyId = '';
 
 beforeEach(async () => {

@@ -4,7 +4,7 @@ import { resetDb } from './helpers/db.js';
 import { prisma } from '../src/prisma.js';
 import { createOrder, markPaidByOrderNo, OutOfStockError } from '../src/services/orders.js';
 
-const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', dir: 'Calle 1', ciudad: 'CABA' };
+const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', calle: 'Calle 1', altura: '100', pisoDepto: '3 B', cp: 'C1425ABC', provincia: 'C', ciudad: 'CABA' };
 let navyId = '';
 beforeEach(async () => {
   await resetDb();
@@ -30,6 +30,23 @@ describe('createOrder', () => {
   it('stores an empty phone as null so the admin "—" fallback works', async () => {
     const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer: { ...customer, tel: '' }, method: 'transfer' });
     expect(order.customerPhone).toBeNull();
+  });
+
+  it('persists the structured shipping address and composes the legacy display address', async () => {
+    const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer, method: 'transfer' });
+    expect(order.shippingStreet).toBe('Calle 1');
+    expect(order.shippingStreetNumber).toBe('100');
+    expect(order.shippingFloor).toBe('3 B');
+    expect(order.shippingZip).toBe('C1425ABC');
+    expect(order.shippingProvince).toBe('C');
+    expect(order.address).toBe('Calle 1 100, 3 B');
+    expect(order.city).toBe('CABA');
+  });
+
+  it('omits the pisoDepto suffix from the display address when absent', async () => {
+    const { order } = await createOrder({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer: { ...customer, pisoDepto: undefined }, method: 'transfer' });
+    expect(order.address).toBe('Calle 1 100');
+    expect(order.shippingFloor).toBeNull();
   });
 });
 

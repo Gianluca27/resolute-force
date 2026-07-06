@@ -18,7 +18,7 @@ import {
 import { notifyOrderPaid, notifyTransferOrder } from '../src/services/notify.js';
 
 const app = createApp();
-const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', dir: 'Calle 1', ciudad: 'CABA' };
+const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', calle: 'Calle 1', altura: '100', cp: '1425', provincia: 'C', ciudad: 'CABA' };
 let navyId = '';
 
 type MailArgs = { to: string; subject: string; html: string };
@@ -302,7 +302,7 @@ describe('Aislamiento de fallos', () => {
 // ───────────── Seguridad — escaping ─────────────
 describe('Seguridad (escapeHtml)', () => {
   it('TC-MAIL-030: neutraliza inyección HTML/script en campos del cliente', async () => {
-    const evil = { nombre: '<script>alert(1)</script>', email: 'ana@x.com', tel: '11', dir: '<img src=x onerror=alert(2)>', ciudad: 'A & B "Co"' };
+    const evil = { nombre: '<script>alert(1)</script>', email: 'ana@x.com', tel: '11', calle: '<img src=x onerror=alert(2)>', altura: '100', cp: '1425', provincia: 'C', ciudad: 'A & B "Co"' };
     const o = await mkOrder(1, 'card', 'M', evil);
     await notifyOrderPaid(o.orderNo);
     const a = adminMail()!;
