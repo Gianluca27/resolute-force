@@ -52,9 +52,9 @@ Gestión completa de envíos por Correo Argentino desde el panel admin: alta de 
 - `GET /api/admin/shipping/agencies?stateId=&pickupAvailability=&packageReception=` → proxy.
 - `GET /api/admin/shipping/shipments` → listado con datos de orden.
 - `POST /api/admin/orders/:id/shipment` → body `{deliveryType, agencyId?, weightGrams, heightCm, widthCm, depthCm, declaredValue, serviceType, shipping: {street, streetNumber, floor?, apartment?, city, province, zip}}`. Compone payload (sender de config, saleDate = createdAt del pedido con offset -03:00, shipmentClientId = orderNo), llama alta, persiste `Shipment` y los campos estructurados en la orden. 409 si ya existe shipment activo.
-- `POST /api/admin/shipments/:id/cancel` → PATCH al correo + `status='cancelled'`.
-- `GET /api/admin/shipments/:id/label?format=` → `{fileName, fileBase64}` o error del correo.
-- `GET /api/admin/shipments/:id/tracking` → eventos.
+- `POST /api/admin/shipping/shipments/:id/cancel` → PATCH al correo + `status='cancelled'`.
+- `GET /api/admin/shipping/shipments/:id/label?format=` → `{fileName, fileBase64}` o error del correo.
+- `GET /api/admin/shipping/shipments/:id/tracking` → eventos.
 
 ## Compartido (`packages/shared`)
 
