@@ -12,6 +12,7 @@ import Metrics from './pages/admin/Metrics';
 import AdminProducts from './pages/admin/Products';
 import ProductForm from './pages/admin/ProductForm';
 import Orders from './pages/admin/Orders';
+import Shipping from './pages/admin/Shipping';
 import DropConfig from './pages/admin/DropConfig';
 import ContentConfig from './pages/admin/ContentConfig';
 
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="productos/nuevo" element={<ProductForm />} />
             <Route path="productos/:id" element={<ProductForm />} />
             <Route path="pedidos" element={<Orders />} />
+            <Route path="correo" element={<Shipping />} />
             <Route path="drop" element={<DropConfig />} />
             <Route path="contenido" element={<ContentConfig />} />
           </Route>

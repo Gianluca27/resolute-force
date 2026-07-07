@@ -4,6 +4,7 @@ import { adminApi } from '../../lib/adminApi';
 import { money } from '../../lib/money';
 import { useToast } from '../../store/toast';
 import Toast from '../../components/Toast';
+import ShipmentModal from '../../components/admin/ShipmentModal';
 
 // es-AR labels for the raw status enum (H-03). Keys stay the API values sent on change.
 const STATUS_LABELS: Record<string, string> = {
@@ -28,6 +29,7 @@ export default function Orders() {
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
+  const [shipmentFor, setShipmentFor] = useState<any | null>(null);
 
   const orders = (data ?? []) as any[];
   const term = q.trim().toLowerCase();
@@ -58,14 +60,26 @@ export default function Orders() {
             </div>
             <div className="text-mut text-[13px]">{o.customerEmail} · {o.customerPhone ?? '—'} · {o.address}, {o.city} · {o.paymentMethod}</div>
             <div className="text-[13px]">{o.items.map((i: any) => `${i.line} ${i.color} ${i.size} x${i.qty}`).join('  ·  ')}</div>
-            <select
-              value={o.status}
-              onChange={(e) => setStatus.mutate({ id: o.id, status: e.target.value })}
-              aria-label={`Estado del pedido ${o.orderNo}`}
-              className="bg-bg border border-line2 rounded-[2px] text-tx px-3 py-2 w-[160px]"
-            >
-              {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-            </select>
+            <div className="flex items-center gap-3 flex-wrap">
+              <select
+                value={o.status}
+                onChange={(e) => setStatus.mutate({ id: o.id, status: e.target.value })}
+                aria-label={`Estado del pedido ${o.orderNo}`}
+                className="bg-bg border border-line2 rounded-[2px] text-tx px-3 py-2 w-[160px]"
+              >
+                {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+              </select>
+              {o.shipment && o.shipment.status !== 'cancelled' ? (
+                <span className="text-gold text-[13px] font-display tracking-[0.08em] uppercase">Correo: {o.shipment.trackingNumber}</span>
+              ) : (o.status === 'paid' || o.status === 'shipped') && (
+                <button
+                  onClick={() => setShipmentFor(o)}
+                  className="bg-bg border border-line2 rounded-[2px] text-tx px-3 py-2 font-display uppercase text-[12px] tracking-[0.1em] hover:border-gold hover:text-gold"
+                >
+                  Generar envío
+                </button>
+              )}
+            </div>
           </div>
         ))}
         {filtered.length === 0 && <div className="text-mut text-[14px]">No hay pedidos.</div>}
@@ -89,6 +103,7 @@ export default function Orders() {
           </button>
         </div>
       )}
+      {shipmentFor && <ShipmentModal order={shipmentFor} onClose={() => setShipmentFor(null)} />}
       <Toast />
     </div>
   );
