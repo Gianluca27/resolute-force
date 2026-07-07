@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { DEFAULT_PAGE_DESIGN } from '@resolute/shared';
 import { useProducts, useDrop, useContent, usePageDesign } from '../hooks/useCatalog';
 import { useCart, cartCount } from '../store/cart';
@@ -6,8 +6,10 @@ import { useToast } from '../store/toast';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import CartDrawer from '../components/CartDrawer';
-import CheckoutModal from '../components/CheckoutModal';
 import Toast from '../components/Toast';
+
+// Lazy: pulls in the MercadoPago SDK — only downloaded when the checkout opens.
+const CheckoutModal = lazy(() => import('../components/CheckoutModal'));
 import ThemeStyle from '../components/ThemeStyle';
 import SectionsRenderer, { computeAnchors, navLinks } from '../components/sections/SectionsRenderer';
 
@@ -68,7 +70,7 @@ export default function Landing() {
       />
       <Footer contactWhatsapp={content.data.contactWhatsapp} contactInstagram={content.data.contactInstagram} />
       {open && <CartDrawer />}
-      {checkoutOpen && <CheckoutModal />}
+      {checkoutOpen && <Suspense fallback={null}><CheckoutModal /></Suspense>}
       <Toast />
     </div>
   );

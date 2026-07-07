@@ -1,4 +1,5 @@
 import { useState, useId, cloneElement, type ReactElement } from 'react';
+import { initMercadoPago } from '@mercadopago/sdk-react';
 import { customerSchema, PROVINCES } from '@resolute/shared';
 import type { CartLineInput, CustomerInput, QuoteResult } from '@resolute/shared';
 import { api } from '../lib/api';
@@ -6,6 +7,10 @@ import { money } from '../lib/money';
 import { useCart, cartCount } from '../store/cart';
 import CardBrick, { type CardFormData } from './payment/CardBrick';
 import WalletButton from './payment/WalletButton';
+
+// Init here (module scope, runs once on first import) instead of main.tsx: this
+// modal is lazy-loaded, so the MP SDK stays out of the public landing chunk.
+initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY ?? 'TEST-PUBLIC-KEY', { locale: 'es-AR' });
 
 type PayMethod = 'transfer' | 'card' | 'wallet';
 // es-AR labels for the payment-method key shown on the confirmation screen. H-04.

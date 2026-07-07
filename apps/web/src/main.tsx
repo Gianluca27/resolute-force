@@ -1,10 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { initMercadoPago } from '@mercadopago/sdk-react';
 import App from './App';
 import './index.css';
 
-initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY ?? 'TEST-PUBLIC-KEY', { locale: 'es-AR' });
+// MercadoPago SDK init lives in CheckoutModal (lazy chunk) so visitors who
+// never open the checkout don't download the SDK.
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
