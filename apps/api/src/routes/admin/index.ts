@@ -6,6 +6,8 @@ import { requireAdmin, type AuthedRequest } from '../../middleware/auth.js';
 import { adminProductsRouter } from './products.js';
 import { adminOrdersRouter } from './orders.js';
 import { adminConfigRouter } from './config.js';
+import { adminPageDesignRouter } from './pageDesign.js';
+import { adminUploadsRouter } from './uploads.js';
 import { getMetrics } from '../../services/metrics.js';
 
 export const adminRouter = Router();
@@ -30,5 +32,7 @@ adminRouter.get('/me', (req: AuthedRequest, res) => res.json({ email: req.admin!
 adminRouter.use('/products', adminProductsRouter);
 adminRouter.use('/orders', adminOrdersRouter);
 adminRouter.use('/config', adminConfigRouter);
+adminRouter.use('/page-design', adminPageDesignRouter);
+adminRouter.use('/uploads', adminUploadsRouter);
 
 adminRouter.get('/metrics', async (_req, res, next) => { try { res.json(await getMetrics()); } catch (e) { next(e); } });

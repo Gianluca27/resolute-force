@@ -14,6 +14,8 @@ import ProductForm from './pages/admin/ProductForm';
 import Orders from './pages/admin/Orders';
 import DropConfig from './pages/admin/DropConfig';
 import ContentConfig from './pages/admin/ContentConfig';
+import Design from './pages/admin/design/Design';
+import DesignPreview from './pages/admin/design/DesignPreview';
 
 export default function App() {
   return (
@@ -25,6 +27,9 @@ export default function App() {
           <Route path="/checkout/pending" element={<CheckoutPending />} />
           <Route path="/checkout/failure" element={<CheckoutFailure />} />
           <Route path="/admin/login" element={<Login />} />
+          {/* Full-screen designer + its iframe preview live outside AdminLayout on purpose. */}
+          <Route path="/admin/design" element={<ProtectedRoute><Design /></ProtectedRoute>} />
+          <Route path="/admin/design/preview" element={<ProtectedRoute><DesignPreview /></ProtectedRoute>} />
           <Route
             path="/admin"
             element={

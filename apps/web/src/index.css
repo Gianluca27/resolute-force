@@ -2,9 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: dark; }
+/* Theme tokens (RGB channels for Tailwind alpha support). These defaults are the
+   brand look; the page designer overrides them at runtime via ThemeStyle. */
+:root {
+  color-scheme: dark;
+  --rf-bg: 10 10 11;
+  --rf-panel: 14 14 16;
+  --rf-card: 22 22 25;
+  --rf-tx: 244 244 243;
+  --rf-mut: 151 151 157;
+  --rf-accent: 228 50 43;
+  --rf-accent-dark: 187 33 28;
+  --rf-secondary: 232 181 62;
+  --rf-font-display: "Saira Condensed";
+  --rf-font-body: "Barlow";
+  --rf-radius: 4px;    /* cards, imágenes */
+  --rf-btn-radius: 2px; /* botones y CTAs */
+}
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: #0a0a0b; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-::selection { background: #e4322b; color: #fff; }
-input::placeholder { color: #5c5c63; }
+body { margin: 0; background: rgb(var(--rf-bg)); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+::selection { background: rgb(var(--rf-accent)); color: #fff; }
+input::placeholder { color: rgb(var(--rf-mut) / 0.6); }

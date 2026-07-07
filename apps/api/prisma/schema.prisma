@@ -94,6 +94,16 @@ model SiteContent {
   updatedAt           DateTime @updatedAt
 }
 
+// Page-builder document (singleton). draft: what the admin edits/previews;
+// published: what the public landing renders. Shapes validated by
+// pageDesignDocSchema in @resolute/shared before every write.
+model PageDesign {
+  id        Int      @id @default(1)
+  draft     Json
+  published Json
+  updatedAt DateTime @updatedAt
+}
+
 model AdminUser {
   id           String   @id @default(cuid())
   email        String   @unique

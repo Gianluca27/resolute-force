@@ -6,6 +6,7 @@ import { env } from './env.js';
 import { productsRouter } from './routes/products.js';
 import { dropRouter } from './routes/drop.js';
 import { contentRouter } from './routes/content.js';
+import { pageDesignRouter } from './routes/pageDesign.js';
 import { notFound, errorHandler } from './middleware/error.js';
 import { checkoutRouter } from './routes/checkout.js';
 import { paymentsRouter } from './routes/payments.js';
@@ -45,6 +46,7 @@ export function createApp() {
   app.use('/api/products', productsRouter);
   app.use('/api/drop', dropRouter);
   app.use('/api/content', contentRouter);
+  app.use('/api/page-design', pageDesignRouter);
   app.use('/api/checkout', checkoutRouter);
   app.use('/api/payments', paymentsRouter);
   app.use('/api/orders', ordersRouter);

@@ -23,12 +23,7 @@ export default function ContentConfig() {
       <h1 className="font-display font-black text-[30px] uppercase">Contenido del sitio</h1>
       {msg && <div className="text-gold text-[13px] uppercase font-display">{msg}</div>}
       {err && <div className="text-red text-[13px] uppercase font-display">{err}</div>}
-      <label className="text-mut text-[12px] uppercase font-display">Marquee (una frase por línea)</label>
-      <textarea aria-label="Marquee" className={inputCls} rows={4} value={c.marquee.join('\n')} onChange={(e) => setC({ ...c, marquee: e.target.value.split('\n').filter(Boolean) })} />
-      <input aria-label="Hero kicker" className={inputCls} value={c.heroKicker} onChange={f('heroKicker')} placeholder="Hero kicker (Est. 2024 · …)" />
-      <input aria-label="Hero línea 1" className={inputCls} value={c.heroTitle1} onChange={f('heroTitle1')} placeholder="Hero línea 1" />
-      <input aria-label="Hero línea 2" className={inputCls} value={c.heroTitle2} onChange={f('heroTitle2')} placeholder="Hero línea 2" />
-      <input aria-label="Hero subtítulo" className={inputCls} value={c.heroSubtitle} onChange={f('heroSubtitle')} placeholder="Hero subtítulo" />
+      <p className="text-mut text-[13px] m-0">El texto del hero y la cinta superior ahora se editan en <a href="/admin/design" className="text-gold">Diseño</a>.</p>
       <label className="text-mut text-[12px] uppercase font-display">Descuento transferencia (%)</label>
       <input aria-label="Descuento transferencia (%)" className={inputCls} type="number" min={0} max={90} step={1} value={c.transferDiscountPct} onChange={(e) => setC({ ...c, transferDiscountPct: Number(e.target.value) })} />
       <input aria-label="Alias bancario" className={inputCls} value={c.bankAlias} onChange={f('bankAlias')} placeholder="Alias bancario" />

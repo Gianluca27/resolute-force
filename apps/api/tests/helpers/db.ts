@@ -8,5 +8,6 @@ export async function resetDb() {
   await prisma.visit.deleteMany();
   await prisma.dropConfig.deleteMany();
   await prisma.siteContent.deleteMany();
+  await prisma.pageDesign.deleteMany();
   await prisma.adminUser.deleteMany();
 }

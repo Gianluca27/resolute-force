@@ -30,6 +30,9 @@ export default function AdminLayout() {
         <NavLink to="/admin/contenido" className={link}>
           Contenido
         </NavLink>
+        <NavLink to="/admin/design" className={link}>
+          Diseño
+        </NavLink>
         <button
           onClick={() => {
             logout();

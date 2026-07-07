@@ -1,16 +1,26 @@
-import type { ContentDTO } from '@resolute/shared';
+import type { ContactoProps, ContentDTO, SectionStyle } from '@resolute/shared';
+import { sectionOverrides, SECTION_PAD, SECTION_PX } from './sections/shell';
 
-const card = 'no-underline text-tx bg-card border border-line rounded-[4px] px-[22px] py-[26px] flex flex-col gap-[14px] transition hover:-translate-y-1';
+const card = 'no-underline text-tx bg-card border border-line rounded-[var(--rf-radius)] px-[22px] py-[26px] flex flex-col gap-[14px] transition hover:-translate-y-1';
 
-export default function Contacto({ content }: { content: ContentDTO }) {
+// Section heading/copy comes from the design doc; the actual channels (whatsapp,
+// instagram, email, location) stay in SiteContent — single source shared with
+// checkout and footer.
+export default function Contacto({ id = 'contacto', props, sectionStyle, content }: {
+  id?: string;
+  props: ContactoProps;
+  sectionStyle?: SectionStyle;
+  content: ContentDTO;
+}) {
+  const o = sectionOverrides(sectionStyle, { bg: 'bg-panel border-t border-line', pad: SECTION_PAD });
   const wa = `https://wa.me/${content.contactWhatsapp}?text=Hola%20Resolute%20Force%2C%20quiero%20hacer%20un%20pedido`;
   return (
-    <section id="contacto" data-screen-label="Contacto" className="scroll-mt-20 bg-panel border-t border-line px-[clamp(18px,5vw,64px)] py-[clamp(64px,10vh,120px)]">
+    <section id={id} data-screen-label="Contacto" style={o.css} className={`scroll-mt-20 ${o.bgCls} ${SECTION_PX} ${o.padCls}`}>
       <div className="max-w-[1180px] mx-auto">
         <div className="text-center mb-[44px]">
-          <div className="font-display font-bold text-[13px] tracking-[0.3em] uppercase text-gold mb-[14px]">Sumate al ejército</div>
-          <h2 className="m-0 font-display font-black uppercase leading-[0.9] tracking-[-0.01em] text-[clamp(2.4rem,5.6vw,4.4rem)]">Hablemos</h2>
-          <p className="mx-auto mt-4 max-w-[440px] text-mut text-[16px] leading-[1.6]">¿Dudas con un talle, un envío o querés tu remera? Escribinos, te respondemos rápido.</p>
+          {props.kicker && <div className="font-display font-bold text-[13px] tracking-[0.3em] uppercase text-gold mb-[14px]">{props.kicker}</div>}
+          <h2 className="m-0 font-display font-black uppercase leading-[0.9] tracking-[-0.01em] text-[clamp(2.4rem,5.6vw,4.4rem)]">{props.title}</h2>
+          {props.subtitle && <p className="mx-auto mt-4 max-w-[440px] text-mut text-[16px] leading-[1.6]">{props.subtitle}</p>}
         </div>
         <div className="grid gap-[16px] [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
           <a href={wa} target="_blank" rel="noopener" className={`${card} hover:border-gold`}>
@@ -25,7 +35,7 @@ export default function Contacto({ content }: { content: ContentDTO }) {
             <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-tx"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>
             <div><div className="font-display font-bold text-[19px] tracking-[0.06em] uppercase">Email</div><div className="text-mut text-[14px] mt-[3px]">{content.contactEmail}</div></div>
           </a>
-          <div className="bg-card border border-line rounded-[4px] px-[22px] py-[26px] flex flex-col gap-[14px]">
+          <div className="bg-card border border-line rounded-[var(--rf-radius)] px-[22px] py-[26px] flex flex-col gap-[14px]">
             <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-gold"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></svg>
             <div><div className="font-display font-bold text-[19px] tracking-[0.06em] uppercase">Ubicación</div><div className="text-mut text-[14px] mt-[3px]">{content.contactLocation}</div></div>
           </div>

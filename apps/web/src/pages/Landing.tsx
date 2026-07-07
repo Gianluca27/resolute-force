@@ -1,19 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { useProducts, useDrop, useContent } from '../hooks/useCatalog';
+import { DEFAULT_PAGE_DESIGN } from '@resolute/shared';
+import { useProducts, useDrop, useContent, usePageDesign } from '../hooks/useCatalog';
 import { useCart, cartCount } from '../store/cart';
 import { useToast } from '../store/toast';
-import Marquee from '../components/Marquee';
 import Nav from '../components/Nav';
-import Hero from '../components/Hero';
-import Manifiesto from '../components/Manifiesto';
-import Productos from '../components/Productos';
-import Historia from '../components/Historia';
-import Proximos from '../components/Proximos';
-import Contacto from '../components/Contacto';
 import Footer from '../components/Footer';
 import CartDrawer from '../components/CartDrawer';
 import CheckoutModal from '../components/CheckoutModal';
 import Toast from '../components/Toast';
+import ThemeStyle from '../components/ThemeStyle';
+import SectionsRenderer, { computeAnchors, navLinks } from '../components/sections/SectionsRenderer';
 
 export default function Landing() {
   // Guard against React StrictMode's double-invoke in dev, which would double-count the visit.
@@ -32,6 +28,7 @@ export default function Landing() {
   const products = useProducts();
   const drop = useDrop();
   const content = useContent();
+  const design = usePageDesign();
   const { items, open, checkoutOpen, setOpen, add } = useCart();
   const showToast = useToast((s) => s.show);
 
@@ -45,23 +42,30 @@ export default function Landing() {
         <div className="flex flex-col items-center gap-4 max-w-[420px]">
           <h1 className="font-display font-black text-[28px] uppercase">No pudimos cargar la tienda</h1>
           <p className="text-mut">Revisá tu conexión e intentá de nuevo.</p>
-          <button onClick={() => content.refetch()} className="bg-red text-white border-0 rounded-[2px] px-6 py-3 cursor-pointer font-display font-bold tracking-[0.12em] uppercase hover:bg-redd">Reintentar</button>
+          <button onClick={() => content.refetch()} className="bg-red text-white border-0 rounded-[var(--rf-btn-radius)] px-6 py-3 cursor-pointer font-display font-bold tracking-[0.12em] uppercase hover:bg-redd">Reintentar</button>
         </div>
       </div>
     );
   }
-  if (!content.data) return <div data-testid="landing" className="min-h-screen bg-bg" />;
+  // If only the design fetch fails, fall back to the bundled default so the
+  // store never goes blank because of the page builder.
+  const doc = design.data ?? (design.isError ? DEFAULT_PAGE_DESIGN : undefined);
+  if (!content.data || !doc) return <div data-testid="landing" className="min-h-screen bg-bg" />;
 
   return (
-    <div data-testid="landing" className="bg-bg text-tx font-body min-h-screen relative overflow-x-hidden">
-      <Marquee items={content.data.marquee} />
-      <Nav cartCount={cartCount(items)} onOpenCart={() => setOpen(true)} />
-      <Hero content={content.data} />
-      <Manifiesto />
-      <Productos products={products.data ?? []} transferDiscountPct={content.data.transferDiscountPct} onAdd={(p, size) => { add(p, size); showToast(`${p.line} · ${p.color} (${size})`); }} />
-      <Historia />
-      {drop.data && <Proximos drop={drop.data} />}
-      <Contacto content={content.data} />
+    <div id="inicio" data-testid="landing" className="bg-bg text-tx font-body min-h-screen relative overflow-x-hidden">
+      <ThemeStyle theme={doc.theme} />
+      <SectionsRenderer
+        doc={doc}
+        nav={<Nav cartCount={cartCount(items)} onOpenCart={() => setOpen(true)} links={navLinks(doc)} />}
+        ctx={{
+          products: products.data ?? [],
+          drop: drop.data,
+          content: content.data,
+          onAdd: (p, size) => { add(p, size); showToast(`${p.line} · ${p.color} (${size})`); },
+          anchors: computeAnchors(doc),
+        }}
+      />
       <Footer contactWhatsapp={content.data.contactWhatsapp} contactInstagram={content.data.contactInstagram} />
       {open && <CartDrawer />}
       {checkoutOpen && <CheckoutModal />}

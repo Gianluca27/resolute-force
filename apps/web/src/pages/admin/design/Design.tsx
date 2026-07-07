@@ -1,0 +1,146 @@
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import type { SectionType } from '@resolute/shared';
+import { useDesigner } from '../../../store/designer';
+import { BLOCK_LABELS, ADDABLE_TYPES, newSection } from './blockDefs';
+import SectionList from './SectionList';
+import SectionForm from './SectionForm';
+import ThemeForm from './ThemeForm';
+import { btnCls, inputCls } from './fields';
+
+// Full-screen designer: left panel (sections/theme forms) + live preview iframe.
+// The iframe renders /admin/design/preview with the draft doc sent by postMessage,
+// so the preview uses the real landing components without another fetch cycle.
+
+export default function Design() {
+  const { doc, dirty, saveState, error, selectedId, load, update, publish, discard, select } = useDesigner();
+  const [tab, setTab] = useState<'secciones' | 'tema'>('secciones');
+  const [addType, setAddType] = useState<SectionType>('textImage');
+  const [mobile, setMobile] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => { void load(); }, [load]);
+
+  // Push the draft to the preview on every change, and when the preview announces it's ready.
+  useEffect(() => {
+    if (!doc) return;
+    iframeRef.current?.contentWindow?.postMessage({ type: 'rf-design-doc', doc }, window.location.origin);
+  }, [doc]);
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || (e.data as { type?: string })?.type !== 'rf-preview-ready') return;
+      const d = useDesigner.getState().doc;
+      if (d) iframeRef.current?.contentWindow?.postMessage({ type: 'rf-design-doc', doc: d }, window.location.origin);
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  if (!doc) {
+    return <div className="min-h-screen bg-bg text-mut font-body flex items-center justify-center">{error || 'Cargando diseño…'}</div>;
+  }
+
+  const selected = selectedId ? doc.sections.find((s) => s.id === selectedId) : null;
+  const saveLabel =
+    saveState === 'saving' || saveState === 'pending' ? 'Guardando…'
+    : saveState === 'error' ? 'Error al guardar'
+    : saveState === 'conflict' ? 'Conflicto de edición'
+    : 'Guardado';
+
+  return (
+    <div className="h-screen bg-bg text-tx font-body flex flex-col overflow-hidden">
+      {/* Top bar */}
+      <header className="flex items-center gap-4 px-4 py-[10px] border-b border-line bg-panel shrink-0 flex-wrap">
+        <Link to="/admin" className="text-mut hover:text-tx no-underline font-display font-semibold text-[13px] tracking-[0.1em] uppercase">← Admin</Link>
+        <div className="font-display font-extrabold text-[16px] tracking-[0.16em] uppercase">Diseño de la página</div>
+        <span className={`text-[12px] font-display tracking-[0.08em] uppercase ${saveState === 'error' || saveState === 'conflict' ? 'text-red' : 'text-mut'}`}>{saveLabel}</span>
+        <div className="ml-auto flex items-center gap-3 flex-wrap">
+          {dirty && <span className="text-gold text-[12px] font-display font-semibold tracking-[0.08em] uppercase">● Cambios sin publicar</span>}
+          <a href="/" target="_blank" rel="noopener" className="text-mut hover:text-tx no-underline text-[12px] font-display tracking-[0.08em] uppercase">Ver publicada ↗</a>
+          <button type="button" className={btnCls} disabled={!dirty}
+            onClick={async () => { if (window.confirm('¿Descartar todos los cambios sin publicar?')) await discard(); }}>
+            Descartar
+          </button>
+          <button type="button" disabled={!dirty || publishing || saveState === 'conflict'}
+            onClick={async () => { setPublishing(true); try { await publish(); } finally { setPublishing(false); } }}
+            className="bg-red text-white border-0 rounded-[2px] px-5 py-[9px] font-display font-bold text-[13px] tracking-[0.12em] uppercase cursor-pointer hover:bg-redd disabled:opacity-40 disabled:cursor-not-allowed">
+            {publishing ? 'Publicando…' : 'Publicar'}
+          </button>
+        </div>
+      </header>
+
+      {(saveState === 'conflict' || saveState === 'error') && (
+        <div className="bg-red/15 border-b border-red/40 text-red px-4 py-2 text-[13px] flex items-center gap-3 shrink-0">
+          {error}
+          {saveState === 'conflict' && (
+            <button type="button" className="underline cursor-pointer bg-transparent border-0 text-red" onClick={() => void load()}>Recargar</button>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-1 min-h-0">
+        {/* Left panel */}
+        <aside className="w-[360px] shrink-0 border-r border-line bg-panel flex flex-col min-h-0">
+          <div className="flex border-b border-line shrink-0">
+            {(['secciones', 'tema'] as const).map((t) => (
+              <button key={t} type="button" onClick={() => { setTab(t); select(null); }}
+                className={`flex-1 py-[10px] font-display font-bold text-[13px] tracking-[0.12em] uppercase cursor-pointer border-0 ${tab === t ? 'bg-bg text-tx' : 'bg-transparent text-mut hover:text-tx'}`}>
+                {t === 'secciones' ? 'Secciones' : 'Tema'}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3">
+            {tab === 'tema' ? (
+              <ThemeForm theme={doc.theme} />
+            ) : selected ? (
+              <div className="flex flex-col gap-3">
+                <button type="button" onClick={() => select(null)} className="self-start bg-transparent border-0 cursor-pointer text-mut hover:text-tx font-display font-semibold text-[12px] tracking-[0.1em] uppercase p-0">← Secciones</button>
+                <div className="font-display font-bold text-[15px] tracking-[0.08em] uppercase">{BLOCK_LABELS[selected.type]}</div>
+                <SectionForm key={selected.id} section={selected} />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <SectionList sections={doc.sections} onOpen={(id) => select(id)} />
+                <div className="flex gap-2 items-end border-t border-line pt-3">
+                  <div className="flex-1">
+                    <label className="flex flex-col gap-[6px]">
+                      <span className="text-mut text-[11px] font-display font-semibold tracking-[0.14em] uppercase">Agregar sección</span>
+                      <select className={inputCls} value={addType} onChange={(e) => setAddType(e.target.value as SectionType)}>
+                        {ADDABLE_TYPES.map((t) => <option key={t} value={t}>{BLOCK_LABELS[t]}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                  <button type="button" className={btnCls} onClick={() => {
+                    const s = newSection(addType);
+                    update((d) => ({ ...d, sections: [...d.sections, s] }));
+                    select(s.id);
+                  }}>+ Agregar</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* Preview */}
+        <main className="flex-1 min-w-0 bg-bg flex flex-col">
+          <div className="flex items-center justify-center gap-2 py-2 border-b border-line shrink-0">
+            <button type="button" onClick={() => setMobile(false)} aria-label="Vista escritorio"
+              className={`${btnCls} ${!mobile ? 'border-gold text-gold' : ''}`}>💻 Escritorio</button>
+            <button type="button" onClick={() => setMobile(true)} aria-label="Vista móvil"
+              className={`${btnCls} ${mobile ? 'border-gold text-gold' : ''}`}>📱 Móvil</button>
+          </div>
+          <div className="flex-1 min-h-0 flex justify-center overflow-hidden p-3">
+            <iframe
+              ref={iframeRef}
+              title="Vista previa"
+              src="/admin/design/preview"
+              className={`h-full border border-line rounded-[4px] bg-white transition-all ${mobile ? 'w-[390px]' : 'w-full'}`}
+            />
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}

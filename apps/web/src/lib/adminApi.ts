@@ -1,4 +1,4 @@
-import type { AdminProductDTO, ProductInput, DropDTO, ContentDTO } from '@resolute/shared';
+import type { AdminProductDTO, ProductInput, DropDTO, ContentDTO, PageDesignAdminDTO, PageDesignDoc } from '@resolute/shared';
 import { useAuth } from '../store/auth';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
@@ -64,4 +64,20 @@ export const adminApi = {
   getContent: () => req<ContentDTO>('GET', '/api/admin/config/content'),
   putContent: (c: ContentDTO) => req<ContentDTO>('PUT', '/api/admin/config/content', c),
   metrics: () => req<any>('GET', '/api/admin/metrics'),
+  getPageDesign: () => req<PageDesignAdminDTO>('GET', '/api/admin/page-design'),
+  putPageDesign: (doc: PageDesignDoc, updatedAt?: string) =>
+    req<PageDesignAdminDTO>('PUT', '/api/admin/page-design', { doc, updatedAt }),
+  publishPageDesign: () => req<PageDesignAdminDTO>('POST', '/api/admin/page-design/publish'),
+  discardPageDesign: () => req<PageDesignAdminDTO>('POST', '/api/admin/page-design/discard'),
+  uploadAsset: async (file: File) => {
+    const fd = new FormData();
+    fd.append('image', file);
+    const res = await fetch(`${BASE}/api/admin/uploads`, { method: 'POST', headers: { ...auth() }, body: fd });
+    if (res.status === 401) { useAuth.getState().logout(); throw new Error('Sesión expirada'); }
+    if (!res.ok) {
+      const e = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(e.error ?? 'No se pudo subir la imagen');
+    }
+    return (await res.json()) as { url: string; publicId: string };
+  },
 };

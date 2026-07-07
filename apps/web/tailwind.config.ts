@@ -4,15 +4,24 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      // Colors resolve through CSS variables (RGB channel triplets) so the admin
+      // page-designer can re-theme at runtime; defaults in index.css :root keep
+      // the site pixel-identical when no custom theme is published.
       colors: {
-        bg: '#0a0a0b', panel: '#0e0e10', card: '#161619',
-        tx: '#f4f4f3', mut: '#97979d',
-        red: '#e4322b', redd: '#bb211c', gold: '#e8b53e',
-        line: 'rgba(255,255,255,0.08)', line2: 'rgba(255,255,255,0.16)',
+        bg: 'rgb(var(--rf-bg) / <alpha-value>)',
+        panel: 'rgb(var(--rf-panel) / <alpha-value>)',
+        card: 'rgb(var(--rf-card) / <alpha-value>)',
+        tx: 'rgb(var(--rf-tx) / <alpha-value>)',
+        mut: 'rgb(var(--rf-mut) / <alpha-value>)',
+        red: 'rgb(var(--rf-accent) / <alpha-value>)',
+        redd: 'rgb(var(--rf-accent-dark) / <alpha-value>)',
+        gold: 'rgb(var(--rf-secondary) / <alpha-value>)',
+        // Hairlines derive from the text color so borders adapt to light themes too.
+        line: 'rgb(var(--rf-tx) / 0.08)', line2: 'rgb(var(--rf-tx) / 0.16)',
       },
       fontFamily: {
-        display: ['"Saira Condensed"', 'system-ui', 'sans-serif'],
-        body: ['"Barlow"', 'system-ui', 'sans-serif'],
+        display: ['var(--rf-font-display)', 'system-ui', 'sans-serif'],
+        body: ['var(--rf-font-body)', 'system-ui', 'sans-serif'],
       },
       keyframes: {
         marquee: { from: { transform: 'translateX(0)' }, to: { transform: 'translateX(-50%)' } },

@@ -1,5 +1,6 @@
 import type { DropDTO } from '@resolute/shared';
 import { useCountdown } from '../hooks/useCountdown';
+import { sectionOverrides } from './sections/shell';
 
 function Cell({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
@@ -10,22 +11,23 @@ function Cell({ value, label, accent }: { value: string; label: string; accent?:
   );
 }
 
-export default function Proximos({ drop }: { drop: DropDTO }) {
+export default function Proximos({ id = 'proximos', drop, sectionStyle }: { id?: string; drop: DropDTO; sectionStyle?: import('@resolute/shared').SectionStyle }) {
   const cd = useCountdown(drop.targetAt);
+  const o = sectionOverrides(sectionStyle, { bg: '', pad: 'py-[clamp(70px,11vh,130px)]' });
   if (!drop.visible) return null;
   // Render the admin-configured title, accenting the last word in gold (matches the design).
   const words = drop.title.trim().split(/\s+/);
   const lastWord = words.length > 1 ? words.pop()! : '';
   const leadWords = words.join(' ');
   return (
-    <section id="proximos" data-screen-label="Proximos" className="relative overflow-hidden text-center px-[clamp(18px,5vw,64px)] py-[clamp(70px,11vh,130px)] scroll-mt-20">
+    <section id={id} data-screen-label="Proximos" style={o.css} className={`relative overflow-hidden text-center px-[clamp(18px,5vw,64px)] scroll-mt-20 ${o.padCls} ${o.bgCls}`}>
       <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(70vw,640px)] h-[min(70vw,640px)] animate-ember"
-           style={{ background: 'radial-gradient(circle,rgba(232,181,62,.16),rgba(228,50,43,.08) 45%,transparent 70%)' }} />
+           style={{ background: 'radial-gradient(circle,rgb(var(--rf-secondary) / .16),rgb(var(--rf-accent) / .08) 45%,transparent 70%)' }} />
       <div className="relative z-[2] max-w-[760px] mx-auto">
-        <img src="/assets/logo-r.png" alt="" width={64} height={64} className="w-16 h-16 object-contain opacity-90 mb-6 mx-auto" style={{ filter: 'drop-shadow(0 0 22px rgba(232,181,62,.5))' }} />
+        <img src="/assets/logo-r.png" alt="" width={64} height={64} className="w-16 h-16 object-contain opacity-90 mb-6 mx-auto" style={{ filter: 'drop-shadow(0 0 22px rgb(var(--rf-secondary) / .5))' }} />
         <div className="font-display font-bold text-[13px] tracking-[0.34em] uppercase text-gold mb-[18px]">Próximo lanzamiento</div>
         <h2 className="m-0 font-display font-black uppercase leading-[0.88] tracking-[-0.01em] text-[clamp(2.6rem,7vw,5.6rem)]">
-          {leadWords}{leadWords && <br />}<span className="text-gold" style={{ textShadow: '0 0 50px rgba(232,181,62,.45)' }}>{lastWord || leadWords}</span>
+          {leadWords}{leadWords && <br />}<span className="text-gold" style={{ textShadow: '0 0 50px rgb(var(--rf-secondary) / .45)' }}>{lastWord || leadWords}</span>
         </h2>
         <p className="mx-auto mt-[22px] max-w-[480px] text-mut leading-[1.6] text-[clamp(16px,1.2vw,18px)]">{drop.teaser}</p>
         <div className="flex flex-wrap justify-center gap-[clamp(10px,2vw,20px)] mt-[42px]">
