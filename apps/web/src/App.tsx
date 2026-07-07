@@ -17,6 +17,7 @@ const Metrics = lazy(() => import('./pages/admin/Metrics'));
 const AdminProducts = lazy(() => import('./pages/admin/Products'));
 const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
 const Orders = lazy(() => import('./pages/admin/Orders'));
+const Shipping = lazy(() => import('./pages/admin/Shipping'));
 const DropConfig = lazy(() => import('./pages/admin/DropConfig'));
 const ContentConfig = lazy(() => import('./pages/admin/ContentConfig'));
 const Design = lazy(() => import('./pages/admin/design/Design'));
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="productos/nuevo" element={<ProductForm />} />
               <Route path="productos/:id" element={<ProductForm />} />
               <Route path="pedidos" element={<Orders />} />
+              <Route path="correo" element={<Shipping />} />
               <Route path="drop" element={<DropConfig />} />
               <Route path="contenido" element={<ContentConfig />} />
             </Route>

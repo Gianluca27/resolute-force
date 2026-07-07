@@ -58,8 +58,13 @@ export const useDesigner = create<DesignerState>((set, get) => {
     selectedId: null,
 
     load: async () => {
-      const res = await adminApi.getPageDesign();
-      set({ doc: res.draft, updatedAt: res.updatedAt, dirty: res.dirty, saveState: 'idle', error: '', selectedId: null });
+      try {
+        const res = await adminApi.getPageDesign();
+        set({ doc: res.draft, updatedAt: res.updatedAt, dirty: res.dirty, saveState: 'idle', error: '', selectedId: null });
+      } catch (e) {
+        // doc stays null — Design.tsx shows `error` instead of the loading label.
+        set({ saveState: 'error', error: e instanceof Error ? e.message : 'No se pudo cargar el diseño' });
+      }
     },
 
     update: (fn) => {

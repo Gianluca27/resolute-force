@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import { pathToFileURL } from 'node:url';
 import type { Prisma } from '@prisma/client';
-import { DEFAULT_PAGE_DESIGN, type PageDesignDoc } from '@resolute/shared';
 import { prisma } from '../src/prisma';
+import { buildInitialDesignDoc } from '../src/services/pageDesign';
 import bcrypt from 'bcryptjs';
 import { env } from '../src/env';
 
@@ -63,22 +63,8 @@ export async function seed() {
     },
   });
 
-  // Page design: seed draft & published from the default doc, but carry over any
-  // hero/marquee values the admin already edited in SiteContent (pre-builder installs).
-  const content = await prisma.siteContent.findFirst({ orderBy: { id: 'asc' } });
-  const doc: PageDesignDoc = JSON.parse(JSON.stringify(DEFAULT_PAGE_DESIGN));
-  if (content) {
-    for (const s of doc.sections) {
-      if (s.type === 'marquee') {
-        try { s.props.items = (JSON.parse(content.marquee) as string[]).slice(0, 12); } catch { /* keep defaults */ }
-      } else if (s.type === 'hero') {
-        s.props.kicker = content.heroKicker;
-        s.props.title1 = content.heroTitle1;
-        s.props.title2 = content.heroTitle2;
-        s.props.subtitle = content.heroSubtitle;
-      }
-    }
-  }
+  // Page design: defaults + SiteContent carry-over (buildInitialDesignDoc).
+  const doc = await buildInitialDesignDoc();
   await prisma.pageDesign.upsert({
     where: { id: 1 },
     update: {}, // never clobber admin edits on re-run

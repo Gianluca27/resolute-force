@@ -2,6 +2,7 @@ import { beforeEach, describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { DEFAULT_PAGE_DESIGN, type PageDesignDoc } from '@resolute/shared';
 import { createApp } from '../src/app.js';
+import { prisma } from '../src/prisma.js';
 import { seed } from '../prisma/seed.js';
 import { resetDb } from './helpers/db.js';
 import { authHeader } from './helpers/auth.js';
@@ -15,6 +16,25 @@ const editedDoc = (): PageDesignDoc => {
   doc.sections = [...doc.sections].reverse();
   return doc;
 };
+
+describe('lazy init when the row is missing (fresh prod deploy, seed never ran)', () => {
+  beforeEach(async () => { await prisma.pageDesign.deleteMany(); });
+
+  it('admin GET creates the row from defaults + SiteContent instead of 500', async () => {
+    const res = await request(app).get('/api/admin/page-design').set(authHeader());
+    expect(res.status).toBe(200);
+    expect(res.body.dirty).toBe(false);
+    expect(res.body.draft.version).toBe(1);
+    const hero = res.body.draft.sections.find((s: { type: string }) => s.type === 'hero');
+    expect(hero.props.title1).toBe('Champion'); // carried over from SiteContent
+  });
+
+  it('public GET also self-heals', async () => {
+    const res = await request(app).get('/api/page-design');
+    expect(res.status).toBe(200);
+    expect(res.body.version).toBe(1);
+  });
+});
 
 describe('GET /api/page-design (public)', () => {
   it('returns the published document seeded from defaults + SiteContent', async () => {
