@@ -17,6 +17,6 @@ export interface AdminProductDTO extends ProductDTO { active: boolean; sortOrder
 export interface DropDTO { targetAt: string; visible: boolean; title: string; teaser: string; updatedAt?: string; }
 export interface ContentDTO {
   marquee: string[]; heroKicker: string; heroTitle1: string; heroTitle2: string; heroSubtitle: string;
-  transferDiscountPct: number; bankAlias: string; bankCbu: string;
+  transferDiscountPct: number; lowStockThreshold?: number; bankAlias: string; bankCbu: string;
   contactWhatsapp: string; contactInstagram: string; contactEmail: string; contactLocation: string; updatedAt?: string;
 }

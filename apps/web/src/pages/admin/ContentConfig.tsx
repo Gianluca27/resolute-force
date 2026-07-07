@@ -26,6 +26,8 @@ export default function ContentConfig() {
       <p className="text-mut text-[13px] m-0">El texto del hero y la cinta superior ahora se editan en <a href="/admin/design" className="text-gold">Diseño</a>.</p>
       <label className="text-mut text-[12px] uppercase font-display">Descuento transferencia (%)</label>
       <input aria-label="Descuento transferencia (%)" className={inputCls} type="number" min={0} max={90} step={1} value={c.transferDiscountPct} onChange={(e) => setC({ ...c, transferDiscountPct: Number(e.target.value) })} />
+      <label className="text-mut text-[12px] uppercase font-display">Umbral de stock bajo (unidades)</label>
+      <input aria-label="Umbral de stock bajo" className={inputCls} type="number" min={0} max={9999} step={1} value={c.lowStockThreshold ?? 5} onChange={(e) => setC({ ...c, lowStockThreshold: Number(e.target.value) })} />
       <input aria-label="Alias bancario" className={inputCls} value={c.bankAlias} onChange={f('bankAlias')} placeholder="Alias bancario" />
       <input aria-label="CBU" className={inputCls} value={c.bankCbu} onChange={f('bankCbu')} placeholder="CBU" />
       <input aria-label="WhatsApp" className={inputCls} value={c.contactWhatsapp} onChange={f('contactWhatsapp')} placeholder="WhatsApp (54911…)" />

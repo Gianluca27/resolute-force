@@ -137,6 +137,7 @@ model SiteContent {
   heroTitle2          String
   heroSubtitle        String
   transferDiscountPct Int      @default(10)
+  lowStockThreshold   Int      @default(5)
   bankAlias           String   @default("")
   bankCbu             String   @default("")
   contactWhatsapp     String
