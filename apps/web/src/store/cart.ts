@@ -7,7 +7,7 @@ export interface CartItem {
   size: string; price: number; imageUrl: string; qty: number;
 }
 
-const emptyCheckoutForm: CustomerInput = { nombre: '', email: '', tel: '', dir: '', ciudad: '' };
+export const emptyCheckoutForm: CustomerInput = { nombre: '', email: '', tel: '', calle: '', altura: '', pisoDepto: '', cp: '', provincia: '', ciudad: '' };
 
 // Clamp a (possibly tampered/persisted) qty to a positive integer.
 const clampQty = (q: unknown): number => {
