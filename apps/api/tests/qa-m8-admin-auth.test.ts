@@ -182,8 +182,8 @@ describe('Guard requireAdmin', () => {
   });
 
   it('TC-AUTH-016: firma manipulada → 401', async () => {
-    const [h, p, s] = validToken().split('.');
-    const tamperedPayload = `${h}.${p!.slice(0, -2)}XX.${s}`; // payload alterado, firma vieja
+    const [h, p, s] = validToken().split('.') as [string, string, string]; // un JWT válido siempre tiene 3 partes
+    const tamperedPayload = `${h}.${p.slice(0, -2)}XX.${s}`; // payload alterado, firma vieja
     const r1 = await request(app).get('/api/admin/me').set('Authorization', `Bearer ${tamperedPayload}`);
     expect(r1.status).toBe(401);
     expect(r1.body).toEqual({ error: 'Sesión inválida o expirada' });

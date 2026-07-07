@@ -1,5 +1,5 @@
 import { useState, useId, cloneElement, type ReactElement } from 'react';
-import { customerSchema } from '@resolute/shared';
+import { customerSchema, PROVINCES } from '@resolute/shared';
 import type { CartLineInput, CustomerInput, QuoteResult } from '@resolute/shared';
 import { api } from '../lib/api';
 import { money } from '../lib/money';
@@ -105,8 +105,23 @@ export default function CheckoutModal() {
                 <Field className="flex-1 basis-[180px]" label="Email" invalid={invalid.has('email')} errorId="checkout-error"><input className={inputCls} maxLength={120} placeholder="tu@email.com" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
                 <Field className="flex-1 basis-[140px]" label="Teléfono" invalid={invalid.has('tel')} errorId="checkout-error"><input className={inputCls} maxLength={30} placeholder="11 1234-5678" value={form.tel} onChange={(e) => set({ tel: e.target.value })} /></Field>
               </div>
-              <Field label="Dirección de envío" invalid={invalid.has('dir')} errorId="checkout-error"><input className={inputCls} maxLength={160} placeholder="Calle y número" value={form.dir} onChange={(e) => set({ dir: e.target.value })} /></Field>
-              <Field label="Ciudad / Provincia" invalid={invalid.has('ciudad')} errorId="checkout-error"><input className={inputCls} maxLength={100} placeholder="Ciudad, Provincia" value={form.ciudad} onChange={(e) => set({ ciudad: e.target.value })} /></Field>
+              <div className="flex gap-3 flex-wrap">
+                <Field className="flex-[2] basis-[200px]" label="Calle" invalid={invalid.has('calle')} errorId="checkout-error"><input className={inputCls} maxLength={120} placeholder="Av. Siempreviva" value={form.calle} onChange={(e) => set({ calle: e.target.value })} /></Field>
+                <Field className="flex-1 basis-[90px]" label="Altura" invalid={invalid.has('altura')} errorId="checkout-error"><input className={inputCls} maxLength={10} placeholder="742" value={form.altura} onChange={(e) => set({ altura: e.target.value })} /></Field>
+              </div>
+              <div className="flex gap-3 flex-wrap">
+                <Field className="flex-1 basis-[150px]" label="Piso / Depto (opcional)" invalid={invalid.has('pisoDepto')} errorId="checkout-error"><input className={inputCls} maxLength={40} placeholder="3° B" value={form.pisoDepto} onChange={(e) => set({ pisoDepto: e.target.value })} /></Field>
+                <Field className="flex-1 basis-[130px]" label="Código postal" invalid={invalid.has('cp')} errorId="checkout-error"><input className={inputCls} maxLength={8} placeholder="C1425ABC" value={form.cp} onChange={(e) => set({ cp: e.target.value })} /></Field>
+              </div>
+              <div className="flex gap-3 flex-wrap">
+                <Field className="flex-1 basis-[170px]" label="Provincia" invalid={invalid.has('provincia')} errorId="checkout-error">
+                  <select className={inputCls} value={form.provincia} onChange={(e) => set({ provincia: e.target.value })}>
+                    <option value="" disabled>Elegí tu provincia</option>
+                    {PROVINCES.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
+                  </select>
+                </Field>
+                <Field className="flex-1 basis-[150px]" label="Ciudad" invalid={invalid.has('ciudad')} errorId="checkout-error"><input className={inputCls} maxLength={100} placeholder="Localidad" value={form.ciudad} onChange={(e) => set({ ciudad: e.target.value })} /></Field>
+              </div>
               <button disabled={busy} onClick={toPago} className="w-full mt-1 bg-red text-white border-0 rounded-[2px] p-4 cursor-pointer font-display font-bold text-[16px] tracking-[0.13em] uppercase hover:bg-redd disabled:opacity-60">Continuar al pago</button>
             </div>
           )}
@@ -181,7 +196,7 @@ function friendlyError(e: unknown, fallback: string): string {
   return e instanceof Error ? e.message : fallback;
 }
 
-const FIELD_LABELS: Record<string, string> = { nombre: 'nombre', email: 'email', tel: 'teléfono', dir: 'dirección', ciudad: 'ciudad' };
+const FIELD_LABELS: Record<string, string> = { nombre: 'nombre', email: 'email', tel: 'teléfono', calle: 'calle', altura: 'altura', pisoDepto: 'piso/depto', cp: 'código postal', provincia: 'provincia', ciudad: 'ciudad' };
 // Name the offending field(s) instead of a single generic message. H-06.
 function validationMessage(fields: Set<string>, form: CustomerInput): string {
   if (fields.size === 1 && fields.has('email') && form.email.trim()) return 'El email no parece válido';
@@ -193,7 +208,7 @@ function validationMessage(fields: Set<string>, form: CustomerInput): string {
 // Associates the <label> with its <input> via a generated id (H-03) and wires aria-invalid /
 // aria-describedby so screen readers announce the validation error (H-04).
 function Field({ label, children, className = '', invalid, errorId }: {
-  label: string; children: ReactElement<React.InputHTMLAttributes<HTMLInputElement>>; className?: string; invalid?: boolean; errorId?: string;
+  label: string; children: ReactElement<{ id?: string; className?: string; 'aria-invalid'?: boolean; 'aria-describedby'?: string }>; className?: string; invalid?: boolean; errorId?: string;
 }) {
   const id = useId();
   return (

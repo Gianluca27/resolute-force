@@ -9,7 +9,7 @@ import { prisma } from '../src/prisma.js';
 import { createOrder } from '../src/services/orders.js';
 import { notifyOrderPaid } from '../src/services/notify.js';
 
-const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', dir: 'Calle 1', ciudad: 'CABA' };
+const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', calle: 'Calle 1', altura: '100', cp: '1425', provincia: 'C', ciudad: 'CABA' };
 beforeEach(async () => { await resetDb(); await seed(); vi.clearAllMocks(); });
 
 describe('notifyOrderPaid', () => {

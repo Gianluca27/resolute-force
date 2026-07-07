@@ -23,7 +23,7 @@ import { createOrder } from '../src/services/orders.js';
 import { notifyOrderPaid } from '../src/services/notify.js';
 
 const app = createApp();
-const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', dir: 'Calle 1', ciudad: 'CABA' };
+const customer = { nombre: 'Ana', email: 'ana@x.com', tel: '11', calle: 'Calle 1', altura: '100', cp: '1425', provincia: 'C', ciudad: 'CABA' };
 
 let navyId = '';
 let negroId = '';
@@ -72,7 +72,7 @@ describe('Orders list', () => {
       customerName: 'Ana',
       customerEmail: 'ana@x.com',
       customerPhone: '11',
-      address: 'Calle 1',
+      address: 'Calle 1 100',
       city: 'CABA',
       paymentMethod: 'transfer',
       total: 54000, // 60000 − 10%

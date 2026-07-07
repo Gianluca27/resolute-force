@@ -8,6 +8,7 @@ import { adminOrdersRouter } from './orders.js';
 import { adminConfigRouter } from './config.js';
 import { adminPageDesignRouter } from './pageDesign.js';
 import { adminUploadsRouter } from './uploads.js';
+import { adminShippingRouter } from './shipping.js';
 import { getMetrics } from '../../services/metrics.js';
 
 export const adminRouter = Router();
@@ -34,5 +35,6 @@ adminRouter.use('/orders', adminOrdersRouter);
 adminRouter.use('/config', adminConfigRouter);
 adminRouter.use('/page-design', adminPageDesignRouter);
 adminRouter.use('/uploads', adminUploadsRouter);
+adminRouter.use('/shipping', adminShippingRouter);
 
 adminRouter.get('/metrics', async (_req, res, next) => { try { res.json(await getMetrics()); } catch (e) { next(e); } });

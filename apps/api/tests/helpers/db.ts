@@ -1,6 +1,8 @@
 import { prisma } from '../../src/prisma';
 
 export async function resetDb() {
+  await prisma.shipment.deleteMany();
+  await prisma.shippingConfig.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
   await prisma.variant.deleteMany();

@@ -30,6 +30,11 @@ const schema = z
     CLOUDINARY_CLOUD_NAME: z.string().default(''),
     CLOUDINARY_API_KEY: z.string().default(''),
     CLOUDINARY_API_SECRET: z.string().default(''),
+    // PAQ.AR (Correo Argentino). Sin credenciales la feature queda deshabilitada (503 en las
+    // rutas admin de envíos) pero no bloquea el boot: el correo es opcional para operar la tienda.
+    PAQAR_BASE_URL: z.string().default('https://apitest.correoargentino.com.ar/paqar'),
+    PAQAR_API_KEY: z.string().default(''),
+    PAQAR_AGREEMENT: z.string().default(''),
   })
   // Production must never run on the public dev fallbacks — fail fast on boot.
   .superRefine((val, ctx) => {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SIZES } from './dto';
+import { PROVINCE_CODES } from './provinces';
 
 export const cartLineSchema = z.object({
   productId: z.string().min(1),
@@ -16,7 +17,13 @@ export const customerSchema = z.object({
   email: z.string().trim().email().max(120),
   // Optional, but if provided must look like a phone number (H-07). Empty string stays allowed.
   tel: z.string().trim().max(30).refine((v) => v === '' || phoneRe.test(v), 'Teléfono inválido').optional(),
-  dir: z.string().trim().min(1).max(160),
+  // Dirección estructurada tal como la exige PAQ.AR: calle/altura/CP/provincia obligatorios.
+  calle: z.string().trim().min(1).max(120),
+  altura: z.string().trim().min(1).max(10),
+  pisoDepto: z.string().trim().max(40).optional(),
+  // CP argentino: "1425" o CPA "C1425ABC" — letra inicial y sufijo opcionales.
+  cp: z.string().trim().regex(/^[A-Za-z]?\d{4}[A-Za-z]{0,3}$/, 'Código postal inválido'),
+  provincia: z.enum(PROVINCE_CODES),
   ciudad: z.string().trim().min(1).max(100),
 });
 

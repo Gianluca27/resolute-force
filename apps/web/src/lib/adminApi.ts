@@ -80,4 +80,21 @@ export const adminApi = {
     }
     return (await res.json()) as { url: string; publicId: string };
   },
+  // PAQ.AR (Correo Argentino)
+  shippingStatus: () => req<{ configured: boolean; valid: boolean | null }>('GET', '/api/admin/shipping/status'),
+  getShippingConfig: () => req<any | null>('GET', '/api/admin/shipping/config'),
+  putShippingConfig: (c: any) => req<any>('PUT', '/api/admin/shipping/config', c),
+  agencies: (f: { stateId?: string; pickupAvailability?: boolean; packageReception?: boolean } = {}) => {
+    const qs = new URLSearchParams();
+    if (f.stateId) qs.set('stateId', f.stateId);
+    if (f.pickupAvailability !== undefined) qs.set('pickupAvailability', String(f.pickupAvailability));
+    if (f.packageReception !== undefined) qs.set('packageReception', String(f.packageReception));
+    const q = qs.toString();
+    return req<any[]>('GET', `/api/admin/shipping/agencies${q ? `?${q}` : ''}`);
+  },
+  shipments: () => req<any[]>('GET', '/api/admin/shipping/shipments'),
+  createShipment: (orderId: string, body: unknown) => req<any>('POST', `/api/admin/orders/${orderId}/shipment`, body),
+  cancelShipment: (id: string) => req<any>('POST', `/api/admin/shipping/shipments/${id}/cancel`),
+  shipmentLabel: (id: string) => req<{ fileName: string; fileBase64: string }>('GET', `/api/admin/shipping/shipments/${id}/label`),
+  shipmentTracking: (id: string) => req<any>('GET', `/api/admin/shipping/shipments/${id}/tracking`),
 };

@@ -21,8 +21,11 @@ beforeEach(() => { useCart.setState({ items: [], open: false, checkoutOpen: true
 async function fillDatosAndContinue() {
   fireEvent.change(screen.getByPlaceholderText('Tu nombre'), { target: { value: 'Ana' } });
   fireEvent.change(screen.getByPlaceholderText('tu@email.com'), { target: { value: 'ana@x.com' } });
-  fireEvent.change(screen.getByPlaceholderText('Calle y número'), { target: { value: 'Calle 1' } });
-  fireEvent.change(screen.getByPlaceholderText('Ciudad, Provincia'), { target: { value: 'CABA' } });
+  fireEvent.change(screen.getByLabelText('Calle'), { target: { value: 'Calle 1' } });
+  fireEvent.change(screen.getByLabelText('Altura'), { target: { value: '100' } });
+  fireEvent.change(screen.getByLabelText('Código postal'), { target: { value: '1425' } });
+  fireEvent.change(screen.getByLabelText('Provincia'), { target: { value: 'C' } });
+  fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: 'CABA' } });
   fireEvent.click(screen.getByRole('button', { name: /continuar al pago/i }));
   await screen.findByText('Forma de pago');
 }
