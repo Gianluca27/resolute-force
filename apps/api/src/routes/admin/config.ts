@@ -12,7 +12,7 @@ const dropSchema = z.object({
 });
 const contentSchema = z.object({
   marquee: z.array(z.string()).min(1), heroKicker: z.string(), heroTitle1: z.string(), heroTitle2: z.string(), heroSubtitle: z.string(),
-  transferDiscountPct: z.number().int().min(0).max(90), bankAlias: z.string(), bankCbu: z.string(),
+  transferDiscountPct: z.number().int().min(0).max(90), lowStockThreshold: z.number().int().min(0).max(9999).optional(), bankAlias: z.string(), bankCbu: z.string(),
   // contactEmail validated like the customer email (was z.string()) — rejects "not-an-email" → broken mailto (H-03).
   contactWhatsapp: z.string(), contactInstagram: z.string(), contactEmail: z.string().email(), contactLocation: z.string(),
   updatedAt: z.string().optional(),

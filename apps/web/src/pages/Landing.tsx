@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { DEFAULT_PAGE_DESIGN } from '@resolute/shared';
 import { useProducts, useDrop, useContent, usePageDesign } from '../hooks/useCatalog';
 import { useCart, cartCount } from '../store/cart';
@@ -14,19 +14,6 @@ import ThemeStyle from '../components/ThemeStyle';
 import SectionsRenderer, { computeAnchors, navLinks } from '../components/sections/SectionsRenderer';
 
 export default function Landing() {
-  // Guard against React StrictMode's double-invoke in dev, which would double-count the visit.
-  const tracked = useRef(false);
-  useEffect(() => {
-    if (tracked.current) return;
-    tracked.current = true;
-    const base = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
-    fetch(`${base}/api/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: '/' }),
-    }).catch(() => {});
-  }, []);
-
   const products = useProducts();
   const drop = useDrop();
   const content = useContent();

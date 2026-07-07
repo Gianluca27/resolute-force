@@ -15,7 +15,7 @@ export async function getContent(): Promise<ContentDTO> {
   return {
     marquee: JSON.parse(c.marquee) as string[],
     heroKicker: c.heroKicker, heroTitle1: c.heroTitle1, heroTitle2: c.heroTitle2, heroSubtitle: c.heroSubtitle,
-    transferDiscountPct: c.transferDiscountPct, bankAlias: c.bankAlias, bankCbu: c.bankCbu,
+    transferDiscountPct: c.transferDiscountPct, lowStockThreshold: c.lowStockThreshold, bankAlias: c.bankAlias, bankCbu: c.bankCbu,
     contactWhatsapp: c.contactWhatsapp, contactInstagram: c.contactInstagram,
     contactEmail: c.contactEmail, contactLocation: c.contactLocation, updatedAt: c.updatedAt.toISOString(),
   };
@@ -43,7 +43,7 @@ export async function updateContent(input: ContentDTO): Promise<ContentDTO> {
     where: { id: existing.id },
     data: {
       marquee: JSON.stringify(input.marquee), heroKicker: input.heroKicker, heroTitle1: input.heroTitle1, heroTitle2: input.heroTitle2, heroSubtitle: input.heroSubtitle,
-      transferDiscountPct: input.transferDiscountPct, bankAlias: input.bankAlias, bankCbu: input.bankCbu,
+      transferDiscountPct: input.transferDiscountPct, lowStockThreshold: input.lowStockThreshold ?? existing.lowStockThreshold, bankAlias: input.bankAlias, bankCbu: input.bankCbu,
       contactWhatsapp: input.contactWhatsapp, contactInstagram: input.contactInstagram, contactEmail: input.contactEmail, contactLocation: input.contactLocation,
     },
   });

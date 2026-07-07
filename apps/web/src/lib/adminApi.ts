@@ -1,4 +1,5 @@
 import type { AdminProductDTO, ProductInput, DropDTO, ContentDTO, PageDesignAdminDTO, PageDesignDoc } from '@resolute/shared';
+import type { MetricsDTO, MetricsRange } from './metricsTypes';
 import { useAuth } from '../store/auth';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
@@ -63,7 +64,7 @@ export const adminApi = {
   putDrop: (d: DropDTO) => req<DropDTO>('PUT', '/api/admin/config/drop', d),
   getContent: () => req<ContentDTO>('GET', '/api/admin/config/content'),
   putContent: (c: ContentDTO) => req<ContentDTO>('PUT', '/api/admin/config/content', c),
-  metrics: () => req<any>('GET', '/api/admin/metrics'),
+  metrics: (range: MetricsRange = '30d') => req<MetricsDTO>('GET', `/api/admin/metrics?range=${range}`),
   getPageDesign: () => req<PageDesignAdminDTO>('GET', '/api/admin/page-design'),
   putPageDesign: (doc: PageDesignDoc, updatedAt?: string) =>
     req<PageDesignAdminDTO>('PUT', '/api/admin/page-design', { doc, updatedAt }),

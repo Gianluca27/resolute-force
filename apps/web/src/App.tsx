@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { queryClient } from './lib/queryClient';
 import Landing from './pages/Landing';
 import ProtectedRoute from './components/admin/ProtectedRoute';
+import { RouteTracker } from './hooks/usePageview';
 
 // Route-level code splitting: the public landing is the only eager chunk.
 // Admin, designer and checkout-result pages load on demand so visitors don't
@@ -27,6 +28,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <RouteTracker />
         <Suspense fallback={<div className="min-h-screen bg-bg" />}>
           <Routes>
             <Route path="/" element={<Landing />} />
