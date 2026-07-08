@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { adminApi } from '../../../lib/adminApi';
 import { useDesigner } from '../../../store/designer';
 import { TextField, TextAreaField, ColorField, Segmented, ImageField, ItemRow, moveItem, btnCls, inputCls } from './fields';
+import { IconUp, IconDown, IconTrash } from './icons';
 
 // Every form edits its section through the designer store; `patch` merges into
 // the section's props and triggers the debounced autosave.
@@ -162,18 +163,28 @@ function GalleryForm({ p, patch }: { p: GalleryProps; patch: Patch<GalleryProps>
       options={[{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }]} />
     <div className="flex flex-col gap-2">
       <span className="text-mut text-[11px] font-display font-semibold tracking-[0.14em] uppercase">Imágenes ({p.images.length}/24)</span>
-      <div className="grid grid-cols-3 gap-2">
-        {p.images.map((img, i) => (
-          <div key={i} className="relative group border border-line rounded-[3px] overflow-hidden">
-            <img src={img.url} alt={img.alt} className="w-full aspect-square object-cover" />
-            <div className="absolute inset-x-0 bottom-0 hidden group-hover:flex bg-black/70 justify-between p-1">
-              <button type="button" className="text-white text-[12px] px-1 cursor-pointer bg-transparent border-0" onClick={() => patch({ images: moveItem(p.images, i, i - 1) })}>←</button>
-              <button type="button" className="text-red text-[12px] px-1 cursor-pointer bg-transparent border-0" onClick={() => patch({ images: p.images.filter((_, j) => j !== i) })}>✕</button>
-              <button type="button" className="text-white text-[12px] px-1 cursor-pointer bg-transparent border-0" onClick={() => patch({ images: moveItem(p.images, i, i + 1) })}>→</button>
-            </div>
+      {p.images.length === 0 && (
+        <div className="text-mut text-[12px] border border-dashed border-line rounded-[3px] p-3 text-center">
+          Sin imágenes todavía. La sección no se muestra hasta que subas al menos una.
+        </div>
+      )}
+      {p.images.map((img, i) => (
+        <div key={i} className="flex items-center gap-2 border border-line rounded-[3px] bg-panel p-2">
+          <img src={img.url} alt={img.alt} className="w-12 h-12 shrink-0 rounded-[2px] object-cover border border-line2" />
+          <input className={inputCls} value={img.alt} placeholder="Descripción (texto alternativo)"
+            onChange={(e) => patch({ images: p.images.map((x, j) => j === i ? { ...x, alt: e.target.value } : x) })} />
+          <div className="flex flex-col">
+            <button type="button" aria-label="Subir imagen en el orden" disabled={i === 0}
+              className="bg-transparent border-0 cursor-pointer text-mut hover:text-tx p-[2px] disabled:opacity-30"
+              onClick={() => patch({ images: moveItem(p.images, i, i - 1) })}><IconUp size={13} /></button>
+            <button type="button" aria-label="Bajar imagen en el orden" disabled={i === p.images.length - 1}
+              className="bg-transparent border-0 cursor-pointer text-mut hover:text-tx p-[2px] disabled:opacity-30"
+              onClick={() => patch({ images: moveItem(p.images, i, i + 1) })}><IconDown size={13} /></button>
           </div>
-        ))}
-      </div>
+          <button type="button" aria-label="Quitar imagen" className="bg-transparent border-0 cursor-pointer text-mut hover:text-red p-1"
+            onClick={() => patch({ images: p.images.filter((_, j) => j !== i) })}><IconTrash size={14} /></button>
+        </div>
+      ))}
       <button type="button" disabled={busy || p.images.length >= 24} className={btnCls} onClick={() => fileRef.current?.click()}>
         {busy ? 'Subiendo…' : '+ Agregar imágenes'}
       </button>

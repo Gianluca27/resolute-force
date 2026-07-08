@@ -6,6 +6,8 @@ import { BLOCK_LABELS, ADDABLE_TYPES, newSection } from './blockDefs';
 import SectionList from './SectionList';
 import SectionForm from './SectionForm';
 import ThemeForm from './ThemeForm';
+import ConfirmDialog from './ConfirmDialog';
+import { IconUndo, IconRedo, IconMonitor, IconPhone, IconExternal } from './icons';
 import { btnCls, inputCls } from './fields';
 
 // Full-screen designer: left panel (sections/theme forms) + live preview iframe.
@@ -18,6 +20,7 @@ export default function Design() {
   const [addType, setAddType] = useState<SectionType>('textImage');
   const [mobile, setMobile] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [askDiscard, setAskDiscard] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => { void load(); }, [load]);
@@ -85,15 +88,14 @@ export default function Design() {
         <span className={`text-[12px] font-display tracking-[0.08em] uppercase ${saveState === 'error' || saveState === 'conflict' ? 'text-red' : 'text-mut'}`}>{saveLabel}</span>
         <div className="flex items-center gap-1">
           <button type="button" onClick={undo} disabled={history.past.length === 0} title="Deshacer (Ctrl+Z)" aria-label="Deshacer"
-            className="bg-transparent border border-line2 rounded-[2px] text-mut hover:text-tx px-2 py-[6px] text-[14px] leading-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">↶</button>
+            className="bg-transparent border border-line2 rounded-[2px] text-mut hover:text-tx px-2 py-[6px] leading-none cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><IconUndo /></button>
           <button type="button" onClick={redo} disabled={history.future.length === 0} title="Rehacer (Ctrl+Shift+Z)" aria-label="Rehacer"
-            className="bg-transparent border border-line2 rounded-[2px] text-mut hover:text-tx px-2 py-[6px] text-[14px] leading-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">↷</button>
+            className="bg-transparent border border-line2 rounded-[2px] text-mut hover:text-tx px-2 py-[6px] leading-none cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><IconRedo /></button>
         </div>
         <div className="ml-auto flex items-center gap-3 flex-wrap">
           {dirty && <span className="text-gold text-[12px] font-display font-semibold tracking-[0.08em] uppercase">● Cambios sin publicar</span>}
-          <a href="/" target="_blank" rel="noopener" className="text-mut hover:text-tx no-underline text-[12px] font-display tracking-[0.08em] uppercase">Ver publicada ↗</a>
-          <button type="button" className={btnCls} disabled={!dirty}
-            onClick={async () => { if (window.confirm('¿Descartar todos los cambios sin publicar?')) await discard(); }}>
+          <a href="/" target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-mut hover:text-tx no-underline text-[12px] font-display tracking-[0.08em] uppercase transition-colors">Ver publicada <IconExternal size={12} /></a>
+          <button type="button" className={btnCls} disabled={!dirty} onClick={() => setAskDiscard(true)}>
             Descartar
           </button>
           <button type="button" disabled={!dirty || publishing || saveState === 'conflict'}
@@ -161,9 +163,9 @@ export default function Design() {
         <main className="flex-1 min-w-0 bg-bg flex flex-col">
           <div className="flex items-center justify-center gap-2 py-2 border-b border-line shrink-0">
             <button type="button" onClick={() => setMobile(false)} aria-label="Vista escritorio"
-              className={`${btnCls} ${!mobile ? 'border-gold text-gold' : ''}`}>💻 Escritorio</button>
+              className={`${btnCls} inline-flex items-center gap-[6px] ${!mobile ? 'border-gold text-gold' : ''}`}><IconMonitor size={13} /> Escritorio</button>
             <button type="button" onClick={() => setMobile(true)} aria-label="Vista móvil"
-              className={`${btnCls} ${mobile ? 'border-gold text-gold' : ''}`}>📱 Móvil</button>
+              className={`${btnCls} inline-flex items-center gap-[6px] ${mobile ? 'border-gold text-gold' : ''}`}><IconPhone size={13} /> Móvil</button>
           </div>
           <div className="flex-1 min-h-0 flex justify-center overflow-hidden p-3">
             <iframe
@@ -175,6 +177,11 @@ export default function Design() {
           </div>
         </main>
       </div>
+
+      <ConfirmDialog open={askDiscard} title="Descartar cambios" confirmLabel="Descartar todo"
+        onConfirm={async () => { setAskDiscard(false); await discard(); }} onCancel={() => setAskDiscard(false)}>
+        Se pierden todos los cambios sin publicar y el borrador vuelve a la última versión publicada. Esto no se puede deshacer.
+      </ConfirmDialog>
     </div>
   );
 }

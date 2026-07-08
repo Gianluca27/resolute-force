@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { adminApi } from '../../../lib/adminApi';
+import { IconUp, IconDown } from './icons';
 
 export const inputCls = 'w-full bg-card border border-line2 rounded-[3px] text-tx px-3 py-[9px] text-[14px] outline-none focus:border-gold';
 export const btnCls = 'bg-card border border-line2 rounded-[2px] text-tx px-3 py-[7px] text-[12px] font-display font-semibold tracking-[0.08em] uppercase cursor-pointer hover:border-gold disabled:opacity-40 disabled:cursor-not-allowed';
@@ -115,8 +116,8 @@ export function ItemRow({ children, onRemove, onUp, onDown }: { children: ReactN
     <div className="border border-line rounded-[3px] p-2 flex flex-col gap-2 bg-panel">
       {children}
       <div className="flex gap-1 justify-end">
-        {onUp && <button type="button" className={btnCls} onClick={onUp} aria-label="Subir">↑</button>}
-        {onDown && <button type="button" className={btnCls} onClick={onDown} aria-label="Bajar">↓</button>}
+        {onUp && <button type="button" className={btnCls} onClick={onUp} aria-label="Subir"><IconUp size={13} /></button>}
+        {onDown && <button type="button" className={btnCls} onClick={onDown} aria-label="Bajar"><IconDown size={13} /></button>}
         <button type="button" className={`${btnCls} hover:border-red hover:text-red`} onClick={onRemove}>Quitar</button>
       </div>
     </div>
