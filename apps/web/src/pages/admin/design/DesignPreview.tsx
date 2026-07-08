@@ -38,10 +38,20 @@ export default function DesignPreview() {
       if (data?.type === 'rf-design-doc' && data.doc) setDoc(data.doc);
       if (data?.type === 'rf-select') setSelectedId(data.id ?? null);
     };
+    // The iframe swallows keyboard focus — forward undo/redo to the editor.
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k !== 'z' && k !== 'y') return;
+      e.preventDefault();
+      const type = k === 'y' || e.shiftKey ? 'rf-redo' : 'rf-undo';
+      window.parent.postMessage({ type }, window.location.origin);
+    };
     window.addEventListener('message', onMsg);
+    window.addEventListener('keydown', onKey);
     window.parent.postMessage({ type: 'rf-preview-ready' }, window.location.origin);
     adminApi.getPageDesign().then((r) => setDoc((d) => d ?? r.draft)).catch(() => {});
-    return () => window.removeEventListener('message', onMsg);
+    return () => { window.removeEventListener('message', onMsg); window.removeEventListener('keydown', onKey); };
   }, []);
 
   useEffect(() => {

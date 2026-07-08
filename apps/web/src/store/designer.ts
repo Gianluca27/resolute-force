@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { PageDesignDoc } from '@resolute/shared';
 import { adminApi } from '../lib/adminApi';
+import { emptyHistory, pushHistory, undoHistory, redoHistory, type History } from '../pages/admin/design/history';
 
 // Autosave: edits mark the store 'pending' and (re)arm a short timer; the PUT
 // carries the optimistic-lock token. Publishing flushes any pending save first
@@ -18,8 +19,11 @@ interface DesignerState {
   saveState: SaveState;
   error: string;
   selectedId: string | null;
+  history: History<PageDesignDoc>;
   load: () => Promise<void>;
   update: (fn: (doc: PageDesignDoc) => PageDesignDoc) => void;
+  undo: () => void;
+  redo: () => void;
   flush: () => Promise<void>;
   publish: () => Promise<void>;
   discard: () => Promise<void>;
@@ -49,6 +53,13 @@ export const useDesigner = create<DesignerState>((set, get) => {
     timer = setTimeout(() => { timer = null; void save(); }, SAVE_DELAY);
   }
 
+  // Shared by undo/redo: swap the doc for a snapshot and autosave it.
+  function restore(result: { history: History<PageDesignDoc>; doc: PageDesignDoc } | null): void {
+    if (!result || get().saveState === 'conflict') return;
+    set({ doc: result.doc, history: result.history, saveState: 'pending' });
+    schedule();
+  }
+
   return {
     doc: null,
     updatedAt: undefined,
@@ -56,11 +67,12 @@ export const useDesigner = create<DesignerState>((set, get) => {
     saveState: 'idle',
     error: '',
     selectedId: null,
+    history: emptyHistory<PageDesignDoc>(),
 
     load: async () => {
       try {
         const res = await adminApi.getPageDesign();
-        set({ doc: res.draft, updatedAt: res.updatedAt, dirty: res.dirty, saveState: 'idle', error: '', selectedId: null });
+        set({ doc: res.draft, updatedAt: res.updatedAt, dirty: res.dirty, saveState: 'idle', error: '', selectedId: null, history: emptyHistory() });
       } catch (e) {
         // doc stays null — Design.tsx shows `error` instead of the loading label.
         set({ saveState: 'error', error: e instanceof Error ? e.message : 'No se pudo cargar el diseño' });
@@ -70,9 +82,12 @@ export const useDesigner = create<DesignerState>((set, get) => {
     update: (fn) => {
       const doc = get().doc;
       if (!doc || get().saveState === 'conflict') return; // conflict requires a reload first
-      set({ doc: fn(doc), saveState: 'pending' });
+      set({ doc: fn(doc), saveState: 'pending', history: pushHistory(get().history, doc, Date.now()) });
       schedule();
     },
+
+    undo: () => { const doc = get().doc; if (doc) restore(undoHistory(get().history, doc)); },
+    redo: () => { const doc = get().doc; if (doc) restore(redoHistory(get().history, doc)); },
 
     flush: async () => {
       if (timer) { clearTimeout(timer); timer = null; }
@@ -96,7 +111,7 @@ export const useDesigner = create<DesignerState>((set, get) => {
     discard: async () => {
       if (timer) { clearTimeout(timer); timer = null; }
       const res = await adminApi.discardPageDesign();
-      set({ doc: res.draft, updatedAt: res.updatedAt, dirty: res.dirty, saveState: 'idle', error: '', selectedId: null });
+      set({ doc: res.draft, updatedAt: res.updatedAt, dirty: res.dirty, saveState: 'idle', error: '', selectedId: null, history: emptyHistory() });
     },
 
     select: (id) => set({ selectedId: id }),

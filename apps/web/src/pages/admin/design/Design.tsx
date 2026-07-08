@@ -13,7 +13,7 @@ import { btnCls, inputCls } from './fields';
 // so the preview uses the real landing components without another fetch cycle.
 
 export default function Design() {
-  const { doc, dirty, saveState, error, selectedId, load, update, publish, discard, select } = useDesigner();
+  const { doc, dirty, saveState, error, selectedId, history, load, update, publish, discard, select, undo, redo } = useDesigner();
   const [tab, setTab] = useState<'secciones' | 'tema'>('secciones');
   const [addType, setAddType] = useState<SectionType>('textImage');
   const [mobile, setMobile] = useState(false);
@@ -37,10 +37,27 @@ export default function Design() {
       } else if (data?.type === 'rf-section-click' && data.id) {
         setTab('secciones');
         useDesigner.getState().select(data.id);
+      } else if (data?.type === 'rf-undo') {
+        useDesigner.getState().undo();
+      } else if (data?.type === 'rf-redo') {
+        useDesigner.getState().redo();
       }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  // Ctrl/Cmd+Z deshace, +Shift (o Ctrl+Y) rehace. Global on purpose: fields are
+  // controlled by the store, so store-level undo is the only sane undo.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === 'z') { e.preventDefault(); if (e.shiftKey) useDesigner.getState().redo(); else useDesigner.getState().undo(); }
+      else if (k === 'y') { e.preventDefault(); useDesigner.getState().redo(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   // Mirror the panel selection into the preview (outline + scroll into view).
@@ -66,6 +83,12 @@ export default function Design() {
         <Link to="/admin" className="text-mut hover:text-tx no-underline font-display font-semibold text-[13px] tracking-[0.1em] uppercase">← Admin</Link>
         <div className="font-display font-extrabold text-[16px] tracking-[0.16em] uppercase">Diseño de la página</div>
         <span className={`text-[12px] font-display tracking-[0.08em] uppercase ${saveState === 'error' || saveState === 'conflict' ? 'text-red' : 'text-mut'}`}>{saveLabel}</span>
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={undo} disabled={history.past.length === 0} title="Deshacer (Ctrl+Z)" aria-label="Deshacer"
+            className="bg-transparent border border-line2 rounded-[2px] text-mut hover:text-tx px-2 py-[6px] text-[14px] leading-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">↶</button>
+          <button type="button" onClick={redo} disabled={history.future.length === 0} title="Rehacer (Ctrl+Shift+Z)" aria-label="Rehacer"
+            className="bg-transparent border border-line2 rounded-[2px] text-mut hover:text-tx px-2 py-[6px] text-[14px] leading-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">↷</button>
+        </div>
         <div className="ml-auto flex items-center gap-3 flex-wrap">
           {dirty && <span className="text-gold text-[12px] font-display font-semibold tracking-[0.08em] uppercase">● Cambios sin publicar</span>}
           <a href="/" target="_blank" rel="noopener" className="text-mut hover:text-tx no-underline text-[12px] font-display tracking-[0.08em] uppercase">Ver publicada ↗</a>
