@@ -11,5 +11,6 @@ export async function resetDb() {
   await prisma.dropConfig.deleteMany();
   await prisma.siteContent.deleteMany();
   await prisma.pageDesign.deleteMany();
+  await prisma.pageDesignVersion.deleteMany();
   await prisma.adminUser.deleteMany();
 }

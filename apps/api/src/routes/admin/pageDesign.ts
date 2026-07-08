@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { pageDesignUpdateSchema } from '@resolute/shared';
-import { getDraftDesign, updateDraftDesign, publishDesign, discardDraftDesign } from '../../services/pageDesign.js';
+import { getDraftDesign, updateDraftDesign, publishDesign, discardDraftDesign, listDesignVersions, restoreDesignVersion } from '../../services/pageDesign.js';
 
 export const adminPageDesignRouter = Router();
 
@@ -20,4 +20,14 @@ adminPageDesignRouter.post('/publish', async (_req, res, next) => {
 
 adminPageDesignRouter.post('/discard', async (_req, res, next) => {
   try { res.json(await discardDraftDesign()); } catch (e) { next(e); }
+});
+
+adminPageDesignRouter.get('/versions', async (_req, res, next) => {
+  try { res.json({ versions: await listDesignVersions() }); } catch (e) { next(e); }
+});
+
+adminPageDesignRouter.post('/versions/:id/restore', async (req, res, next) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(404).json({ error: 'Versión no encontrada' });
+  try { res.json(await restoreDesignVersion(id)); } catch (e) { next(e); }
 });

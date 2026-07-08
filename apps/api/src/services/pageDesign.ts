@@ -73,11 +73,39 @@ export async function updateDraftDesign(doc: PageDesignDoc, expectedUpdatedAt?: 
   return toAdminDTO(row);
 }
 
+const MAX_VERSIONS = 20;
+
 export async function publishDesign(): Promise<PageDesignAdminDTO> {
+  const existing = await getRow();
+  const row = await prisma.$transaction(async (tx) => {
+    const updated = await tx.pageDesign.update({
+      where: { id: existing.id },
+      data: { published: existing.draft as Prisma.InputJsonValue },
+    });
+    // Snapshot the newly published doc and prune beyond the newest MAX_VERSIONS.
+    await tx.pageDesignVersion.create({ data: { doc: existing.draft as Prisma.InputJsonValue } });
+    const stale = await tx.pageDesignVersion.findMany({
+      orderBy: { id: 'desc' }, skip: MAX_VERSIONS, select: { id: true },
+    });
+    if (stale.length) await tx.pageDesignVersion.deleteMany({ where: { id: { in: stale.map((v) => v.id) } } });
+    return updated;
+  });
+  return toAdminDTO(row);
+}
+
+export async function listDesignVersions(): Promise<Array<{ id: number; publishedAt: string }>> {
+  const rows = await prisma.pageDesignVersion.findMany({ orderBy: { id: 'desc' }, select: { id: true, publishedAt: true } });
+  return rows.map((r) => ({ id: r.id, publishedAt: r.publishedAt.toISOString() }));
+}
+
+/** Copies a snapshot into the draft. Published is untouched — the admin previews and re-publishes. */
+export async function restoreDesignVersion(id: number): Promise<PageDesignAdminDTO> {
+  const version = await prisma.pageDesignVersion.findUnique({ where: { id } });
+  if (!version) throw new HttpError(404, 'Versión no encontrada');
   const existing = await getRow();
   const row = await prisma.pageDesign.update({
     where: { id: existing.id },
-    data: { published: existing.draft as Prisma.InputJsonValue },
+    data: { draft: version.doc as Prisma.InputJsonValue },
   });
   return toAdminDTO(row);
 }

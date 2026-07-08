@@ -157,6 +157,14 @@ model PageDesign {
   updatedAt DateTime @updatedAt
 }
 
+// Snapshot of each published design, newest first. Capped at 20 by the
+// publish service so the table can't grow unbounded.
+model PageDesignVersion {
+  id          Int      @id @default(autoincrement())
+  doc         Json
+  publishedAt DateTime @default(now())
+}
+
 model AdminUser {
   id           String   @id @default(cuid())
   email        String   @unique

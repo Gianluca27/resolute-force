@@ -103,3 +103,57 @@ describe('admin /api/admin/page-design', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('version history /api/admin/page-design/versions', () => {
+  it('rejects unauthenticated access', async () => {
+    expect((await request(app).get('/api/admin/page-design/versions')).status).toBe(401);
+    expect((await request(app).post('/api/admin/page-design/versions/1/restore')).status).toBe(401);
+  });
+
+  it('each publish snapshots a version, listed newest first', async () => {
+    await request(app).post('/api/admin/page-design/publish').set(authHeader());
+    await request(app).put('/api/admin/page-design').set(authHeader()).send({ doc: editedDoc() });
+    await request(app).post('/api/admin/page-design/publish').set(authHeader());
+
+    const res = await request(app).get('/api/admin/page-design/versions').set(authHeader());
+    expect(res.status).toBe(200);
+    expect(res.body.versions).toHaveLength(2);
+    expect(res.body.versions[0].id).toBeGreaterThan(res.body.versions[1].id);
+    expect(typeof res.body.versions[0].publishedAt).toBe('string');
+    // list is light — no full docs over the wire
+    expect(res.body.versions[0].doc).toBeUndefined();
+  });
+
+  it('restore copies the version into the draft without touching published', async () => {
+    await request(app).post('/api/admin/page-design/publish').set(authHeader()); // v1: accent default
+    await request(app).put('/api/admin/page-design').set(authHeader()).send({ doc: editedDoc() });
+    await request(app).post('/api/admin/page-design/publish').set(authHeader()); // v2: accent #3366ff
+
+    const list = await request(app).get('/api/admin/page-design/versions').set(authHeader());
+    const oldest = list.body.versions[1];
+
+    const res = await request(app).post(`/api/admin/page-design/versions/${oldest.id}/restore`).set(authHeader());
+    expect(res.status).toBe(200);
+    expect(res.body.draft.theme.colors.accent).toBe('#e4322b'); // draft = v1 again
+    expect(res.body.dirty).toBe(true); // published untouched (still v2)
+
+    const pub = await request(app).get('/api/page-design');
+    expect(pub.body.theme.colors.accent).toBe('#3366ff');
+  });
+
+  it('unknown version id → 404', async () => {
+    const res = await request(app).post('/api/admin/page-design/versions/99999/restore').set(authHeader());
+    expect(res.status).toBe(404);
+  });
+
+  it('keeps at most 20 versions', async () => {
+    for (let i = 0; i < 22; i++) {
+      const doc = editedDoc();
+      doc.theme.shapes.radius = i % 24;
+      await request(app).put('/api/admin/page-design').set(authHeader()).send({ doc });
+      await request(app).post('/api/admin/page-design/publish').set(authHeader());
+    }
+    const res = await request(app).get('/api/admin/page-design/versions').set(authHeader());
+    expect(res.body.versions).toHaveLength(20);
+  });
+});
