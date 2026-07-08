@@ -29,13 +29,24 @@ export default function Design() {
   }, [doc]);
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
-      if (e.origin !== window.location.origin || (e.data as { type?: string })?.type !== 'rf-preview-ready') return;
-      const d = useDesigner.getState().doc;
-      if (d) iframeRef.current?.contentWindow?.postMessage({ type: 'rf-design-doc', doc: d }, window.location.origin);
+      if (e.origin !== window.location.origin) return;
+      const data = e.data as { type?: string; id?: string };
+      if (data?.type === 'rf-preview-ready') {
+        const d = useDesigner.getState().doc;
+        if (d) iframeRef.current?.contentWindow?.postMessage({ type: 'rf-design-doc', doc: d }, window.location.origin);
+      } else if (data?.type === 'rf-section-click' && data.id) {
+        setTab('secciones');
+        useDesigner.getState().select(data.id);
+      }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
   }, []);
+
+  // Mirror the panel selection into the preview (outline + scroll into view).
+  useEffect(() => {
+    iframeRef.current?.contentWindow?.postMessage({ type: 'rf-select', id: selectedId }, window.location.origin);
+  }, [selectedId]);
 
   if (!doc) {
     return <div className="min-h-screen bg-bg text-mut font-body flex items-center justify-center">{error || 'Cargando diseño…'}</div>;

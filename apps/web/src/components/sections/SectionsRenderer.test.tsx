@@ -39,3 +39,13 @@ it('derives nav links from visible sections in page order', () => {
 it('computeAnchors points hero CTAs at the first visible instance', () => {
   expect(computeAnchors(DEFAULT_PAGE_DESIGN)).toEqual({ products: 'productos', manifiesto: 'manifiesto' });
 });
+
+it('wrap decorates every visible section (marquee included) without changing order', () => {
+  const { container } = render(
+    <SectionsRenderer doc={DEFAULT_PAGE_DESIGN} ctx={ctx}
+      wrap={(s, node) => <div data-testid={`wrap-${s.id}`} data-rf-section={s.id}>{node}</div>} />,
+  );
+  const visible = DEFAULT_PAGE_DESIGN.sections.filter((s) => s.visible);
+  const wrapped = [...container.querySelectorAll('[data-rf-section]')].map((el) => el.getAttribute('data-rf-section'));
+  expect(wrapped).toEqual(visible.map((s) => s.id)); // all wrapped, doc order, marquee first
+});

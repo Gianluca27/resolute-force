@@ -68,17 +68,25 @@ function renderSection(s: PageSection, ctx: RenderCtx): ReactNode {
 /**
  * Renders the page from a design doc. `nav` is injected by the caller (cart
  * wiring differs between landing and preview). A marquee in first position
- * renders above the nav, matching the classic layout.
+ * renders above the nav, matching the classic layout. `wrap` lets the design
+ * preview decorate each section (hit-target + highlight) without touching the
+ * public landing markup.
  */
-export default function SectionsRenderer({ doc, ctx, nav }: { doc: PageDesignDoc; ctx: RenderCtx; nav?: ReactNode }) {
+export default function SectionsRenderer({ doc, ctx, nav, wrap }: {
+  doc: PageDesignDoc;
+  ctx: RenderCtx;
+  nav?: ReactNode;
+  wrap?: (section: PageSection, node: ReactNode) => ReactNode;
+}) {
   const sections = doc.sections.filter((s) => s.visible);
   const marqueeFirst = sections[0]?.type === 'marquee' ? sections[0] : null;
   const rest = marqueeFirst ? sections.slice(1) : sections;
+  const render = (s: PageSection): ReactNode => wrap ? wrap(s, renderSection(s, ctx)) : renderSection(s, ctx);
   return (
     <>
-      {marqueeFirst && renderSection(marqueeFirst, ctx)}
+      {marqueeFirst && <Fragment key={marqueeFirst.id}>{render(marqueeFirst)}</Fragment>}
       {nav}
-      {rest.map((s) => <Fragment key={s.id}>{renderSection(s, ctx)}</Fragment>)}
+      {rest.map((s) => <Fragment key={s.id}>{render(s)}</Fragment>)}
     </>
   );
 }
