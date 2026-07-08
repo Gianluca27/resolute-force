@@ -25,7 +25,21 @@ type MailArgs = { to: string; subject: string; html: string };
 const calls = (): MailArgs[] => vi.mocked(sendMail).mock.calls.map((c) => c[0] as MailArgs);
 const adminMail = () => calls().find((c) => c.to === 'admin@test.com');
 const custMail = () => calls().find((c) => c.to === 'ana@x.com');
-const tick = () => new Promise((r) => setTimeout(r, 10)); // deja drenar el notify fire-and-forget
+// Drena el notify fire-and-forget. Con `expected`, espera (hasta 3s) a que
+// lleguen esos mails Y a que el conteo se estabilice — el sleep fijo de 10ms
+// se quedaba corto bajo carga (TC-MAIL-010 flaky). Sin `expected` (casos
+// negativos) solo espera la estabilización del conteo.
+const tick = async (expected = 0) => {
+  const deadline = Date.now() + 3000;
+  let stable = 0;
+  let last = -1;
+  while (Date.now() < deadline && (calls().length < expected || stable < 3)) {
+    const n = calls().length;
+    stable = n === last ? stable + 1 : 0;
+    last = n;
+    await new Promise((r) => setTimeout(r, 15));
+  }
+};
 const setStockM = (n: number) => prisma.variant.updateMany({ where: { productId: navyId, size: 'M' }, data: { stock: n } });
 const mkOrder = (qty: number, method: 'transfer' | 'card' | 'wallet' = 'card', size = 'M', cust = customer) =>
   createOrder({ items: [{ productId: navyId, size, qty }], customer: cust, method }).then((r) => r.order);
@@ -42,7 +56,7 @@ describe('Triggers', () => {
   it('TC-MAIL-008: card-approved (markPaid) dispara admin+customer; customer SIN bloque banco', async () => {
     const o = await mkOrder(1, 'card');
     await markPaidByOrderNo(o.orderNo, 'PAY-1');
-    await tick();
+    await tick(2);
     expect(adminMail()).toBeTruthy();
     expect(custMail()).toBeTruthy();
     expect(custMail()!.html).not.toContain('Para confirmar, transferí'); // card → sin bank block
@@ -52,7 +66,7 @@ describe('Triggers', () => {
   it('TC-MAIL-010: admin marca pending→paid (changeOrderStatus) dispara ambos mails', async () => {
     const o = await mkOrder(2, 'transfer');
     await changeOrderStatus(o.id, 'paid');
-    await tick();
+    await tick(2);
     expect(calls()).toHaveLength(2);
     expect(adminMail()).toBeTruthy();
     expect(custMail()).toBeTruthy();
@@ -61,7 +75,7 @@ describe('Triggers', () => {
   it('TC-MAIL-011: admin salta pending→shipped → markPaid dispara los mails una vez; queda shipped', async () => {
     const o = await mkOrder(2, 'transfer');
     await changeOrderStatus(o.id, 'shipped');
-    await tick();
+    await tick(2);
     expect(calls()).toHaveLength(2);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: o.id } })).status).toBe('shipped');
   });
@@ -69,10 +83,10 @@ describe('Triggers', () => {
   it('TC-MAIL-012: reversa (refunded) notifica al cliente y al admin la cancelación (H-02)', async () => {
     const o = await mkOrder(2, 'card');
     await markPaidByOrderNo(o.orderNo, 'PAY-1');
-    await tick();
+    await tick(2);
     vi.clearAllMocks();
     await reverseOrderIfPaid(o.orderNo);
-    await tick();
+    await tick(2);
     const c = custMail()!;
     expect(c).toBeTruthy();
     expect(c.subject).toContain('cancelado');
@@ -84,11 +98,11 @@ describe('Triggers', () => {
   it('TC-MAIL-012b: reversa repetida (refunded + charged_back) notifica una sola vez', async () => {
     const o = await mkOrder(2, 'card');
     await markPaidByOrderNo(o.orderNo, 'PAY-1');
-    await tick();
+    await tick(2);
     vi.clearAllMocks();
     await reverseOrderIfPaid(o.orderNo);
     await reverseOrderIfPaid(o.orderNo); // 2º claim ve count===0 → no re-notifica
-    await tick();
+    await tick(2);
     expect(calls()).toHaveLength(2); // 1 admin + 1 customer, no 4
   });
 
@@ -106,7 +120,7 @@ describe('Idempotencia', () => {
   it('TC-MAIL-014: dispara exactamente una vez en la transición a paid (admin x1, customer x1)', async () => {
     const o = await mkOrder(1, 'card');
     await markPaidByOrderNo(o.orderNo, 'PAY-1');
-    await tick();
+    await tick(2);
     expect(calls().filter((c) => c.to === 'admin@test.com')).toHaveLength(1);
     expect(calls().filter((c) => c.to === 'ana@x.com')).toHaveLength(1);
   });
@@ -115,14 +129,14 @@ describe('Idempotencia', () => {
     const o = await mkOrder(1, 'card');
     await markPaidByOrderNo(o.orderNo, 'PAY-1');
     await markPaidByOrderNo(o.orderNo, 'PAY-1');
-    await tick();
+    await tick(2);
     expect(calls()).toHaveLength(2); // sigue 2 (1 admin + 1 customer), no 4
   });
 
   it('TC-MAIL-016: guardar el mismo status (paid→paid) no dispara mail', async () => {
     const o = await mkOrder(1, 'card');
     await changeOrderStatus(o.id, 'paid');
-    await tick();
+    await tick(2);
     vi.clearAllMocks();
     await changeOrderStatus(o.id, 'paid'); // from===to → short-circuit
     await tick();

@@ -112,6 +112,8 @@ describe('Login — negativos & bordes', () => {
 
 // ───────────────────────── Brute-force / rate limit ─────────────────────────
 describe('Rate limit', () => {
+  // 11 logins secuenciales = 10 bcrypt compares (cost 12): con la suite en
+  // paralelo superan los 5s default → timeout propio.
   it('TC-AUTH-008: 10 intentos permitidos, 11º → 429 (incluso con cred correcta)', async () => {
     for (let i = 0; i < 10; i++) {
       const r = await request(app).post('/api/admin/login').send({ email: env.ADMIN_EMAIL, password: 'wrong' });
@@ -120,7 +122,7 @@ describe('Rate limit', () => {
     const eleventh = await request(app).post('/api/admin/login').send({ email: env.ADMIN_EMAIL, password: 'secret123' });
     expect(eleventh.status).toBe(429);
     expect(eleventh.body).toEqual({ error: 'Demasiados intentos de acceso. Probá de nuevo más tarde.' });
-  });
+  }, 20_000);
 });
 
 // ───────────────────────── Guard requireAdmin — verificación de token ─────────────────────────
