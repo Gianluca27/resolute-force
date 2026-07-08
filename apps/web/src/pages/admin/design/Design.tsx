@@ -8,7 +8,8 @@ import SectionForm from './SectionForm';
 import ThemeForm from './ThemeForm';
 import ConfirmDialog from './ConfirmDialog';
 import VersionHistory from './VersionHistory';
-import { IconUndo, IconRedo, IconMonitor, IconPhone, IconExternal, IconHistory } from './icons';
+import { checkDesign, type DesignIssue } from './designChecks';
+import { IconUndo, IconRedo, IconMonitor, IconPhone, IconExternal, IconHistory, IconAlert } from './icons';
 import { btnCls, inputCls } from './fields';
 
 // Full-screen designer: left panel (sections/theme forms) + live preview iframe.
@@ -23,6 +24,7 @@ export default function Design() {
   const [publishing, setPublishing] = useState(false);
   const [askDiscard, setAskDiscard] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [publishIssues, setPublishIssues] = useState<DesignIssue[] | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => { void load(); }, [load]);
@@ -74,6 +76,8 @@ export default function Design() {
     return <div className="min-h-screen bg-bg text-mut font-body flex items-center justify-center">{error || 'Cargando diseño…'}</div>;
   }
 
+  const doPublish = async () => { setPublishing(true); try { await publish(); } finally { setPublishing(false); } };
+
   const selected = selectedId ? doc.sections.find((s) => s.id === selectedId) : null;
   const saveLabel =
     saveState === 'saving' || saveState === 'pending' ? 'Guardando…'
@@ -105,7 +109,11 @@ export default function Design() {
             Descartar
           </button>
           <button type="button" disabled={!dirty || publishing || saveState === 'conflict'}
-            onClick={async () => { setPublishing(true); try { await publish(); } finally { setPublishing(false); } }}
+            onClick={() => {
+              const issues = checkDesign(doc);
+              if (issues.length) setPublishIssues(issues);
+              else void doPublish();
+            }}
             className="bg-red text-white border-0 rounded-[2px] px-5 py-[9px] font-display font-bold text-[13px] tracking-[0.12em] uppercase cursor-pointer hover:bg-redd disabled:opacity-40 disabled:cursor-not-allowed">
             {publishing ? 'Publicando…' : 'Publicar'}
           </button>
@@ -185,6 +193,31 @@ export default function Design() {
       </div>
 
       <VersionHistory open={showHistory} onClose={() => setShowHistory(false)} />
+
+      <ConfirmDialog open={publishIssues != null} title="Revisar antes de publicar"
+        confirmLabel={publishIssues?.some((i) => i.severity === 'error') ? 'Publicar igual' : 'Publicar'}
+        onConfirm={() => { setPublishIssues(null); void doPublish(); }} onCancel={() => setPublishIssues(null)}>
+        <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto">
+          {publishIssues?.map((issue, i) => (
+            <button key={i} type="button"
+              disabled={!issue.sectionId}
+              onClick={() => {
+                if (!issue.sectionId) return;
+                setPublishIssues(null);
+                setTab('secciones');
+                select(issue.sectionId);
+              }}
+              className={`flex items-start gap-2 text-left bg-card border rounded-[3px] p-2 w-full ${issue.sectionId ? 'cursor-pointer hover:border-gold' : 'cursor-default'} ${issue.severity === 'error' ? 'border-red/50' : 'border-line'}`}>
+              <span className={issue.severity === 'error' ? 'text-red mt-[1px]' : 'text-gold mt-[1px]'}><IconAlert size={13} /></span>
+              <span className="flex-1">
+                <span className="block text-tx text-[11px] font-display font-bold tracking-[0.1em] uppercase">{issue.label}</span>
+                <span className="block text-mut text-[12px]">{issue.message}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </ConfirmDialog>
+
       <ConfirmDialog open={askDiscard} title="Descartar cambios" confirmLabel="Descartar todo"
         onConfirm={async () => { setAskDiscard(false); await discard(); }} onCancel={() => setAskDiscard(false)}>
         Se pierden todos los cambios sin publicar y el borrador vuelve a la última versión publicada. Esto no se puede deshacer.

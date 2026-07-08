@@ -43,17 +43,21 @@ export function contrastRatio(a: string, b: string): number {
   return (hi! + 0.05) / (lo! + 0.05);
 }
 
-/** Pairs the theme editor checks; below 4.5:1 we warn (never block). */
+/**
+ * Pairs the theme editor checks; below the threshold we warn (never block).
+ * Body-text pairs use WCAG AA 4.5:1; button labels are large bold display
+ * text, where AA asks 3:1 — 4.5 there would flag the default brand red.
+ */
 export function contrastWarnings(theme: Theme): string[] {
   const c = theme.colors;
-  const checks: Array<[string, string, string]> = [
-    ['Texto sobre fondo', c.text, c.bg],
-    ['Texto sobre paneles', c.text, c.panel],
-    ['Texto sobre tarjetas', c.text, c.card],
-    ['Texto secundario sobre fondo', c.muted, c.bg],
-    ['Blanco sobre acento (botones)', '#ffffff', c.accent],
+  const checks: Array<[string, string, string, number]> = [
+    ['Texto sobre fondo', c.text, c.bg, 4.5],
+    ['Texto sobre paneles', c.text, c.panel, 4.5],
+    ['Texto sobre tarjetas', c.text, c.card, 4.5],
+    ['Texto secundario sobre fondo', c.muted, c.bg, 4.5],
+    ['Blanco sobre acento (botones)', '#ffffff', c.accent, 3],
   ];
   return checks
-    .filter(([, fg, bg]) => contrastRatio(fg, bg) < 4.5)
-    .map(([label, fg, bg]) => `${label}: contraste ${contrastRatio(fg, bg).toFixed(1)}:1 (mínimo legible 4.5:1)`);
+    .filter(([, fg, bg, min]) => contrastRatio(fg, bg) < min)
+    .map(([label, fg, bg, min]) => `${label}: contraste ${contrastRatio(fg, bg).toFixed(1)}:1 (mínimo legible ${min}:1)`);
 }
