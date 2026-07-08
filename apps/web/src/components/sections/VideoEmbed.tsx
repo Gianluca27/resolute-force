@@ -17,7 +17,7 @@ export default function VideoEmbed({ id, props, sectionStyle }: { id: string; pr
             title={props.title || 'Video'}
             loading="lazy"
             className="absolute inset-0 w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
           />
