@@ -40,6 +40,27 @@ it('computeAnchors points hero CTAs at the first visible instance', () => {
   expect(computeAnchors(DEFAULT_PAGE_DESIGN)).toEqual({ products: 'productos', manifiesto: 'manifiesto' });
 });
 
+it('renders the sizeTable, testimonials and videoEmbed blocks', () => {
+  const d = doc([
+    { id: 'st', type: 'sizeTable', visible: true, props: { kicker: '', title: 'Guía de talles', note: 'Medidas en cm', columns: ['Talle', 'Pecho'], rows: [['S', '96']] } },
+    { id: 'te', type: 'testimonials', visible: true, props: { kicker: '', title: 'Qué dicen', items: [{ quote: 'Excelente calidad', name: 'Juan P.', detail: 'Rosario' }] } },
+    { id: 've', type: 'videoEmbed', visible: true, props: { kicker: '', title: 'Detrás de escena', url: 'https://youtu.be/dQw4w9WgXcQ', caption: 'Drop 2026' } },
+  ]);
+  render(<SectionsRenderer doc={d} ctx={ctx} />);
+  expect(screen.getByText('Guía de talles')).toBeInTheDocument();
+  expect(screen.getByRole('table')).toBeInTheDocument();
+  expect(screen.getByText(/Excelente calidad/)).toBeInTheDocument();
+  expect(screen.getByTitle('Detrás de escena')).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+});
+
+it('videoEmbed with an unrecognized URL renders no iframe (no injection)', () => {
+  const d = doc([
+    { id: 've', type: 'videoEmbed', visible: true, props: { kicker: '', title: 'Video', url: 'https://malicioso.com/x', caption: '' } },
+  ]);
+  const { container } = render(<SectionsRenderer doc={d} ctx={ctx} />);
+  expect(container.querySelector('iframe')).toBeNull();
+});
+
 it('wrap decorates every visible section (marquee included) without changing order', () => {
   const { container } = render(
     <SectionsRenderer doc={DEFAULT_PAGE_DESIGN} ctx={ctx}

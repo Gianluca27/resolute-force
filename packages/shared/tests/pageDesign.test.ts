@@ -32,6 +32,56 @@ describe('pageDesignDocSchema', () => {
   });
 });
 
+describe('new blocks: sizeTable / testimonials / videoEmbed', () => {
+  it('accepts a valid size table', () => {
+    const s = sectionSchema.parse({
+      id: 'st1', type: 'sizeTable', visible: true,
+      props: {
+        kicker: '', title: 'Guía de talles', note: 'Medidas en cm',
+        columns: ['Talle', 'Pecho', 'Largo'],
+        rows: [['S', '96', '68'], ['M', '102', '71']],
+      },
+    });
+    expect(s.type).toBe('sizeTable');
+  });
+
+  it('rejects a size-table row wider than its header', () => {
+    expect(sectionSchema.safeParse({
+      id: 'st1', type: 'sizeTable', visible: true,
+      props: { kicker: '', title: 'Talles', note: '', columns: ['Talle'], rows: [['S', '96']] },
+    }).success).toBe(false);
+  });
+
+  it('accepts testimonials with optional photo', () => {
+    const s = sectionSchema.parse({
+      id: 'te1', type: 'testimonials', visible: true,
+      props: {
+        kicker: '', title: 'Qué dicen',
+        items: [
+          { quote: 'La mejor calidad.', name: 'Juan P.', detail: 'CrossFit', imageUrl: '/x.png' },
+          { quote: 'Volvería a comprar.', name: 'Sofi', detail: '' },
+        ],
+      },
+    });
+    expect(s.type).toBe('testimonials');
+  });
+
+  it('rejects a testimonial without quote or name', () => {
+    expect(sectionSchema.safeParse({
+      id: 'te1', type: 'testimonials', visible: true,
+      props: { kicker: '', title: '', items: [{ quote: '', name: '', detail: '' }] },
+    }).success).toBe(false);
+  });
+
+  it('accepts a video embed', () => {
+    const s = sectionSchema.parse({
+      id: 'v1', type: 'videoEmbed', visible: true,
+      props: { kicker: '', title: 'Detrás de escena', url: 'https://www.youtube.com/watch?v=abc123', caption: '' },
+    });
+    expect(s.type).toBe('videoEmbed');
+  });
+});
+
 describe('sectionSchema', () => {
   it('accepts a valid textImage block', () => {
     const s = sectionSchema.parse({

@@ -67,6 +67,22 @@ it('warns on FAQ questions without an answer', () => {
   expect(checkDesign(d)).toHaveLength(1);
 });
 
+it('warns on a video section without a recognizable URL', () => {
+  const withUrl = (url: string) => doc((d) => {
+    d.sections.push({ id: 'v-1', type: 'videoEmbed', visible: true, props: { kicker: '', title: 'Video', url, caption: '' } });
+  });
+  expect(checkDesign(withUrl(''))).toHaveLength(1);
+  expect(checkDesign(withUrl('https://ejemplo.com/x'))).toHaveLength(1);
+  expect(checkDesign(withUrl('https://youtu.be/dQw4w9WgXcQ'))).toEqual([]);
+});
+
+it('warns on a size table without rows', () => {
+  const d = doc((del) => {
+    del.sections.push({ id: 'st-1', type: 'sizeTable', visible: true, props: { kicker: '', title: 'Talles', note: '', columns: ['Talle'], rows: [] } });
+  });
+  expect(checkDesign(d)).toHaveLength(1);
+});
+
 it('surfaces low-contrast theme combinations as warnings', () => {
   const d = doc((del) => { del.theme.colors.text = '#1a1a1a'; }); // dark text on dark bg
   const issues = checkDesign(d);

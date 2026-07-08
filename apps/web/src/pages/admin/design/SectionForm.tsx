@@ -2,7 +2,9 @@ import { useRef, useState } from 'react';
 import type {
   PageSection, SectionStyle, HeroProps, MarqueeProps, ManifiestoProps, ProductsProps,
   HistoriaProps, ContactoProps, TextImageProps, CtaBannerProps, GalleryProps, FaqProps,
+  SizeTableProps, TestimonialsProps, VideoEmbedProps,
 } from '@resolute/shared';
+import { videoEmbedUrl } from '../../../lib/videoEmbed';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../../lib/adminApi';
 import { useDesigner } from '../../../store/designer';
@@ -230,6 +232,104 @@ function FaqForm({ p, patch }: { p: FaqProps; patch: Patch<FaqProps> }) {
   </>);
 }
 
+function SizeTableForm({ p, patch }: { p: SizeTableProps; patch: Patch<SizeTableProps> }) {
+  const setCell = (r: number, c: number, v: string) =>
+    patch({ rows: p.rows.map((row, i) => i === r ? row.map((cell, j) => j === c ? v : cell) : row) });
+  const setCol = (c: number, v: string) => patch({ columns: p.columns.map((col, j) => j === c ? v : col) });
+  const cellCls = `${inputCls} px-2 py-[6px] text-[13px]`;
+  return (<>
+    <TextField label="Kicker" value={p.kicker} onChange={(v) => patch({ kicker: v })} />
+    <TextField label="Título" value={p.title} onChange={(v) => patch({ title: v })} />
+    <div className="flex flex-col gap-2">
+      <span className="text-mut text-[11px] font-display font-semibold tracking-[0.14em] uppercase">Tabla ({p.rows.length}/12 filas)</span>
+      <div className="overflow-x-auto">
+        <div className="flex flex-col gap-1 min-w-0">
+          <div className="flex gap-1">
+            {p.columns.map((col, c) => (
+              <div key={c} className="flex-1 min-w-[72px] flex items-center gap-1">
+                <input className={`${cellCls} font-display font-bold uppercase`} value={col} aria-label={`Columna ${c + 1}`}
+                  onChange={(e) => setCol(c, e.target.value)} />
+                {p.columns.length > 1 && (
+                  <button type="button" aria-label={`Quitar columna ${c + 1}`} className="bg-transparent border-0 cursor-pointer text-mut hover:text-red p-0 shrink-0"
+                    onClick={() => patch({ columns: p.columns.filter((_, j) => j !== c), rows: p.rows.map((r) => r.filter((_, j) => j !== c)) })}>
+                    <IconTrash size={12} />
+                  </button>
+                )}
+              </div>
+            ))}
+            <div className="w-[22px] shrink-0" />
+          </div>
+          {p.rows.map((row, r) => (
+            <div key={r} className="flex gap-1">
+              {row.map((cell, c) => (
+                <div key={c} className="flex-1 min-w-[72px]">
+                  <input className={cellCls} value={cell} aria-label={`Fila ${r + 1}, columna ${c + 1}`} onChange={(e) => setCell(r, c, e.target.value)} />
+                </div>
+              ))}
+              <button type="button" aria-label={`Quitar fila ${r + 1}`} className="w-[22px] shrink-0 bg-transparent border-0 cursor-pointer text-mut hover:text-red p-0"
+                onClick={() => patch({ rows: p.rows.filter((_, j) => j !== r) })}><IconTrash size={13} /></button>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-2">
+        {p.rows.length < 12 && (
+          <button type="button" className={btnCls} onClick={() => patch({ rows: [...p.rows, p.columns.map(() => '')] })}>+ Fila</button>
+        )}
+        {p.columns.length < 6 && (
+          <button type="button" className={btnCls}
+            onClick={() => patch({ columns: [...p.columns, ''], rows: p.rows.map((r) => [...r, '']) })}>+ Columna</button>
+        )}
+      </div>
+    </div>
+    <TextAreaField label="Nota al pie" rows={2} value={p.note} onChange={(v) => patch({ note: v })} />
+  </>);
+}
+
+function TestimonialsForm({ p, patch }: { p: TestimonialsProps; patch: Patch<TestimonialsProps> }) {
+  return (<>
+    <TextField label="Kicker" value={p.kicker} onChange={(v) => patch({ kicker: v })} />
+    <TextField label="Título" value={p.title} onChange={(v) => patch({ title: v })} />
+    <div className="flex flex-col gap-2">
+      <span className="text-mut text-[11px] font-display font-semibold tracking-[0.14em] uppercase">Testimonios ({p.items.length}/9)</span>
+      {p.items.map((t, i) => (
+        <ItemRow key={i}
+          onRemove={() => p.items.length > 1 && patch({ items: p.items.filter((_, j) => j !== i) })}
+          onUp={() => patch({ items: moveItem(p.items, i, i - 1) })}
+          onDown={() => patch({ items: moveItem(p.items, i, i + 1) })}>
+          <TextAreaField label={`Cita ${i + 1}`} rows={2} value={t.quote} onChange={(v) => patch({ items: p.items.map((x, j) => j === i ? { ...x, quote: v } : x) })} />
+          <div className="grid grid-cols-2 gap-2">
+            <TextField label="Nombre" value={t.name} onChange={(v) => patch({ items: p.items.map((x, j) => j === i ? { ...x, name: v } : x) })} />
+            <TextField label="Detalle (ciudad, deporte…)" value={t.detail} onChange={(v) => patch({ items: p.items.map((x, j) => j === i ? { ...x, detail: v } : x) })} />
+          </div>
+          <ImageField label="Foto (opcional)" value={t.imageUrl ?? ''}
+            onChange={(url, publicId) => patch({ items: p.items.map((x, j) => j === i ? { ...x, imageUrl: url, imagePublicId: publicId } : x) })} />
+        </ItemRow>
+      ))}
+      {p.items.length < 9 && (
+        <button type="button" className={btnCls} onClick={() => patch({ items: [...p.items, { quote: 'Nuevo testimonio', name: 'Nombre', detail: '' }] })}>+ Agregar testimonio</button>
+      )}
+    </div>
+  </>);
+}
+
+function VideoEmbedForm({ p, patch }: { p: VideoEmbedProps; patch: Patch<VideoEmbedProps> }) {
+  const unrecognized = p.url.trim() !== '' && !videoEmbedUrl(p.url);
+  return (<>
+    <TextField label="Kicker" value={p.kicker} onChange={(v) => patch({ kicker: v })} />
+    <TextField label="Título" value={p.title} onChange={(v) => patch({ title: v })} />
+    <TextField label="Link del video (YouTube o Vimeo)" value={p.url} onChange={(v) => patch({ url: v })}
+      placeholder="https://www.youtube.com/watch?v=…" />
+    {unrecognized && (
+      <p className="text-red text-[12px] m-0">No se reconoce ese link. Pegá la URL del video en YouTube (watch, shorts o youtu.be) o Vimeo.</p>
+    )}
+    {!p.url.trim() && (
+      <p className="text-mut text-[12px] m-0">Sin link, la sección no se muestra en la página.</p>
+    )}
+    <TextAreaField label="Epígrafe (opcional)" rows={2} value={p.caption} onChange={(v) => patch({ caption: v })} />
+  </>);
+}
+
 function StyleEditor({ style, onChange }: { style: SectionStyle | undefined; onChange: (s: SectionStyle) => void }) {
   const s: SectionStyle = style ?? { background: 'default', paddingY: 'default' };
   return (
@@ -273,6 +373,9 @@ export default function SectionForm({ section }: { section: PageSection }) {
       case 'ctaBanner': return <CtaBannerForm p={section.props} patch={patchProps} />;
       case 'gallery': return <GalleryForm p={section.props} patch={patchProps} />;
       case 'faq': return <FaqForm p={section.props} patch={patchProps} />;
+      case 'sizeTable': return <SizeTableForm p={section.props} patch={patchProps} />;
+      case 'testimonials': return <TestimonialsForm p={section.props} patch={patchProps} />;
+      case 'videoEmbed': return <VideoEmbedForm p={section.props} patch={patchProps} />;
       default: return null;
     }
   })();

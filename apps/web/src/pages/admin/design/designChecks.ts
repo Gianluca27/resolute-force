@@ -1,5 +1,6 @@
 import type { PageDesignDoc, PageSection } from '@resolute/shared';
 import { contrastWarnings } from '../../../lib/theme';
+import { videoEmbedUrl } from '../../../lib/videoEmbed';
 import { BLOCK_LABELS } from './blockDefs';
 
 // Pre-publish checklist. Everything here is a soft block: the admin sees the
@@ -49,6 +50,15 @@ function sectionIssues(s: PageSection): DesignIssue[] {
       : [];
     case 'hero': return !s.props.title1.trim() && !s.props.title2.trim()
       ? [{ severity: 'warn', sectionId: s.id, label, message: 'El hero no tiene título.' }]
+      : [];
+    case 'videoEmbed': {
+      if (!s.props.url.trim()) return [{ severity: 'warn', sectionId: s.id, label, message: 'No hay video cargado: la sección no se va a mostrar.' }];
+      return videoEmbedUrl(s.props.url)
+        ? []
+        : [{ severity: 'warn', sectionId: s.id, label, message: 'No se reconoce la URL del video. Pegá un link de YouTube o Vimeo.' }];
+    }
+    case 'sizeTable': return s.props.rows.length === 0
+      ? [{ severity: 'warn', sectionId: s.id, label, message: 'La tabla no tiene filas: la sección no se va a mostrar.' }]
       : [];
     default: return [];
   }

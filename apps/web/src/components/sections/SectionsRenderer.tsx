@@ -11,6 +11,9 @@ import TextImage from './TextImage';
 import CtaBanner from './CtaBanner';
 import Gallery from './Gallery';
 import Faq from './Faq';
+import SizeTable from './SizeTable';
+import Testimonials from './Testimonials';
+import VideoEmbed from './VideoEmbed';
 
 export interface RenderCtx {
   products: ProductDTO[];
@@ -61,6 +64,9 @@ function renderSection(s: PageSection, ctx: RenderCtx): ReactNode {
     case 'ctaBanner': return <CtaBanner id={s.id} props={s.props} sectionStyle={s.style} />;
     case 'gallery': return <Gallery id={s.id} props={s.props} sectionStyle={s.style} />;
     case 'faq': return <Faq id={s.id} props={s.props} sectionStyle={s.style} />;
+    case 'sizeTable': return <SizeTable id={s.id} props={s.props} sectionStyle={s.style} />;
+    case 'testimonials': return <Testimonials id={s.id} props={s.props} sectionStyle={s.style} />;
+    case 'videoEmbed': return <VideoEmbed id={s.id} props={s.props} sectionStyle={s.style} />;
     default: return null; // unknown type from a newer/older doc version — skip, never crash
   }
 }

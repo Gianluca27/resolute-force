@@ -131,6 +131,34 @@ export const faqPropsSchema = z.object({
   items: z.array(z.object({ q: str(240), a: str(1200) })).min(1).max(20),
 });
 
+// Header defines the width; every row must match it so the table renders square.
+export const sizeTablePropsSchema = z.object({
+  kicker: str(60),
+  title: str(160),
+  note: str(240), // e.g. "Medidas en cm, prenda extendida"
+  columns: z.array(str(24)).min(1).max(6),
+  rows: z.array(z.array(str(24))).max(12),
+}).refine((p) => p.rows.every((r) => r.length === p.columns.length), 'Cada fila debe tener tantas celdas como columnas');
+
+export const testimonialsPropsSchema = z.object({
+  kicker: str(60),
+  title: str(160),
+  items: z.array(z.object({
+    quote: str(400).refine((v) => v.length > 0, 'La cita no puede estar vacía'),
+    name: str(80).refine((v) => v.length > 0, 'El nombre no puede estar vacío'),
+    detail: str(80), // e.g. "CrossFit · Rosario"
+    imageUrl: img.optional(),
+    imagePublicId: str(200).optional(),
+  })).min(1).max(9),
+});
+
+export const videoEmbedPropsSchema = z.object({
+  kicker: str(60),
+  title: str(160),
+  url: str(300), // YouTube/Vimeo page URL; the renderer derives the embed URL
+  caption: str(240),
+});
+
 const base = {
   id: z.string().trim().min(1).max(40),
   visible: z.boolean(),
@@ -149,6 +177,9 @@ export const sectionSchema = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('ctaBanner'), props: ctaBannerPropsSchema }),
   z.object({ ...base, type: z.literal('gallery'), props: galleryPropsSchema }),
   z.object({ ...base, type: z.literal('faq'), props: faqPropsSchema }),
+  z.object({ ...base, type: z.literal('sizeTable'), props: sizeTablePropsSchema }),
+  z.object({ ...base, type: z.literal('testimonials'), props: testimonialsPropsSchema }),
+  z.object({ ...base, type: z.literal('videoEmbed'), props: videoEmbedPropsSchema }),
 ]);
 export type PageSection = z.infer<typeof sectionSchema>;
 export type SectionType = PageSection['type'];
@@ -163,6 +194,9 @@ export type TextImageProps = z.infer<typeof textImagePropsSchema>;
 export type CtaBannerProps = z.infer<typeof ctaBannerPropsSchema>;
 export type GalleryProps = z.infer<typeof galleryPropsSchema>;
 export type FaqProps = z.infer<typeof faqPropsSchema>;
+export type SizeTableProps = z.infer<typeof sizeTablePropsSchema>;
+export type TestimonialsProps = z.infer<typeof testimonialsPropsSchema>;
+export type VideoEmbedProps = z.infer<typeof videoEmbedPropsSchema>;
 
 export const pageDesignDocSchema = z.object({
   version: z.literal(1),
