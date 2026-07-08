@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pageDesignDocSchema, sectionSchema, themeSchema, DEFAULT_PAGE_DESIGN } from '../src/index';
+import { pageDesignDocSchema, sectionSchema, themeSchema, DEFAULT_PAGE_DESIGN, FONT_OPTIONS } from '../src/index';
 
 describe('pageDesignDocSchema', () => {
   it('accepts the default document (seed & web fallback depend on this)', () => {
@@ -96,7 +96,30 @@ describe('sectionSchema', () => {
       id: 'g1', type: 'gallery', visible: true, style: {},
       props: { kicker: '', title: '', columns: 3, images: [] },
     });
-    expect(s.style).toEqual({ background: 'default', paddingY: 'default' });
+    expect(s.style).toEqual({ background: 'default', paddingY: 'default', align: 'default' });
+  });
+
+  it('accepts centered alignment and keeps old docs (no align) valid', () => {
+    const s = sectionSchema.parse({
+      id: 'g1', type: 'gallery', visible: true, style: { background: 'bg', paddingY: 'md', align: 'center' },
+      props: { kicker: '', title: '', columns: 3, images: [] },
+    });
+    expect(s.style?.align).toBe('center');
+    // docs saved before the field existed still parse
+    const legacy = sectionSchema.parse({
+      id: 'g2', type: 'gallery', visible: true, style: { background: 'panel', paddingY: 'sm' },
+      props: { kicker: '', title: '', columns: 3, images: [] },
+    });
+    expect(legacy.style?.align).toBe('default');
+  });
+});
+
+describe('theme fonts', () => {
+  it('every curated font id is accepted by the schema', () => {
+    for (const f of FONT_OPTIONS) {
+      const t = { ...DEFAULT_PAGE_DESIGN.theme, fonts: { display: f.id, body: f.id } };
+      expect(themeSchema.safeParse(t).success, f.id).toBe(true);
+    }
   });
 });
 

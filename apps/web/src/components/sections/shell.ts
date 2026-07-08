@@ -18,12 +18,14 @@ const BG: Record<Exclude<SectionStyle['background'], 'default' | 'custom'>, stri
 export function sectionOverrides(
   style: SectionStyle | undefined,
   designed: { bg: string; pad: string },
-): { bgCls: string; padCls: string; css?: CSSProperties } {
+): { bgCls: string; padCls: string; alignCls: string; css?: CSSProperties } {
   const bg = style?.background ?? 'default';
   const pad = style?.paddingY ?? 'default';
   return {
     bgCls: bg === 'default' ? designed.bg : bg === 'custom' ? '' : BG[bg],
     padCls: pad === 'default' ? designed.pad : PAD[pad],
+    // Only content blocks pass alignCls through to their markup.
+    alignCls: style?.align === 'center' ? 'text-center' : '',
     css: bg === 'custom' && style?.customBg ? { backgroundColor: style.customBg } : undefined,
   };
 }

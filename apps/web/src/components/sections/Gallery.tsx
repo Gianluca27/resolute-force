@@ -10,7 +10,7 @@ const COLS: Record<GalleryProps['columns'], string> = {
 export default function Gallery({ id, props, sectionStyle }: { id: string; props: GalleryProps; sectionStyle?: SectionStyle }) {
   const o = sectionOverrides(sectionStyle, { bg: '', pad: SECTION_PAD });
   return (
-    <section id={id} data-screen-label="Galería" style={o.css} className={`scroll-mt-20 ${o.bgCls} ${SECTION_PX} ${o.padCls}`}>
+    <section id={id} data-screen-label="Galería" style={o.css} className={`scroll-mt-20 ${o.bgCls} ${SECTION_PX} ${o.padCls} ${o.alignCls}`}>
       <div className="max-w-[1180px] mx-auto">
         {(props.kicker || props.title) && (
           <div className="text-center mb-[44px]">

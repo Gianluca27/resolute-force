@@ -37,6 +37,9 @@ export const sectionStyleSchema = z.object({
   background: z.enum(['default', 'bg', 'panel', 'custom']).default('default'),
   customBg: hexColor.optional(),
   paddingY: z.enum(['default', 'sm', 'md', 'lg']).default('default'),
+  // Only content blocks (gallery, faq, sizeTable, testimonials, videoEmbed)
+  // honor 'center'; brand blocks keep their designed layout.
+  align: z.enum(['default', 'center']).default('default'),
 });
 export type SectionStyle = z.infer<typeof sectionStyleSchema>;
 

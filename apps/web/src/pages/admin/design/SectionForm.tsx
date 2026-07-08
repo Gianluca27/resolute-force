@@ -330,8 +330,11 @@ function VideoEmbedForm({ p, patch }: { p: VideoEmbedProps; patch: Patch<VideoEm
   </>);
 }
 
-function StyleEditor({ style, onChange }: { style: SectionStyle | undefined; onChange: (s: SectionStyle) => void }) {
-  const s: SectionStyle = style ?? { background: 'default', paddingY: 'default' };
+// Blocks whose markup honors style.align (see shell.sectionOverrides).
+const ALIGNABLE = new Set<PageSection['type']>(['gallery', 'faq', 'sizeTable', 'testimonials', 'videoEmbed']);
+
+function StyleEditor({ type, style, onChange }: { type: PageSection['type']; style: SectionStyle | undefined; onChange: (s: SectionStyle) => void }) {
+  const s: SectionStyle = style ?? { background: 'default', paddingY: 'default', align: 'default' };
   return (
     <details className="border-t border-line pt-3 mt-1">
       <summary className="cursor-pointer text-mut text-[11px] font-display font-semibold tracking-[0.14em] uppercase">Estilo de la sección</summary>
@@ -343,6 +346,10 @@ function StyleEditor({ style, onChange }: { style: SectionStyle | undefined; onC
         )}
         <Segmented label="Espaciado vertical" value={s.paddingY} onChange={(v) => onChange({ ...s, paddingY: v })}
           options={[{ value: 'default', label: 'Original' }, { value: 'sm', label: 'Chico' }, { value: 'md', label: 'Medio' }, { value: 'lg', label: 'Grande' }]} />
+        {ALIGNABLE.has(type) && (
+          <Segmented label="Alineación del texto" value={s.align ?? 'default'} onChange={(v) => onChange({ ...s, align: v })}
+            options={[{ value: 'default', label: 'Original' }, { value: 'center', label: 'Centrado' }]} />
+        )}
       </div>
     </details>
   );
@@ -383,7 +390,7 @@ export default function SectionForm({ section }: { section: PageSection }) {
   return (
     <div className="flex flex-col gap-3">
       {form}
-      {section.type !== 'marquee' && <StyleEditor style={section.style} onChange={patchStyle} />}
+      {section.type !== 'marquee' && <StyleEditor type={section.type} style={section.style} onChange={patchStyle} />}
     </div>
   );
 }

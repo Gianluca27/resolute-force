@@ -18,6 +18,11 @@ export const FONT_OPTIONS = [
   { id: 'space-grotesk', label: 'Space Grotesk', family: '"Space Grotesk"', gf: 'Space+Grotesk:wght@400;500;600;700' },
   { id: 'roboto-condensed', label: 'Roboto Condensed', family: '"Roboto Condensed"', gf: 'Roboto+Condensed:wght@400;500;600;700' },
   { id: 'poppins', label: 'Poppins', family: '"Poppins"', gf: 'Poppins:wght@400;500;600;700;800' },
+  { id: 'teko', label: 'Teko', family: '"Teko"', gf: 'Teko:wght@400;500;600;700' },
+  { id: 'rajdhani', label: 'Rajdhani', family: '"Rajdhani"', gf: 'Rajdhani:wght@400;500;600;700' },
+  { id: 'league-spartan', label: 'League Spartan', family: '"League Spartan"', gf: 'League+Spartan:wght@500;600;700;800;900' },
+  { id: 'sora', label: 'Sora', family: '"Sora"', gf: 'Sora:wght@400;500;600;700' },
+  { id: 'manrope', label: 'Manrope', family: '"Manrope"', gf: 'Manrope:wght@400;500;600;700;800' },
 ] as const;
 export type FontId = (typeof FONT_OPTIONS)[number]['id'];
 

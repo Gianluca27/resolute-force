@@ -53,6 +53,18 @@ it('renders the sizeTable, testimonials and videoEmbed blocks', () => {
   expect(screen.getByTitle('Detrás de escena')).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
 });
 
+it('align: center adds text-center on content blocks', () => {
+  const d = doc([
+    {
+      id: 'st', type: 'sizeTable', visible: true,
+      style: { background: 'default', paddingY: 'default', align: 'center' },
+      props: { kicker: '', title: 'Talles', note: '', columns: ['Talle'], rows: [['S']] },
+    },
+  ]);
+  const { container } = render(<SectionsRenderer doc={d} ctx={ctx} />);
+  expect(container.querySelector('#st')?.className).toContain('text-center');
+});
+
 it('videoEmbed with an unrecognized URL renders no iframe (no injection)', () => {
   const d = doc([
     { id: 've', type: 'videoEmbed', visible: true, props: { kicker: '', title: 'Video', url: 'https://malicioso.com/x', caption: '' } },

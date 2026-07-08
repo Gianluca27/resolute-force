@@ -4,7 +4,7 @@ import { sectionOverrides, SECTION_PAD, SECTION_PX } from './shell';
 export default function Faq({ id, props, sectionStyle }: { id: string; props: FaqProps; sectionStyle?: SectionStyle }) {
   const o = sectionOverrides(sectionStyle, { bg: 'bg-panel border-y border-line', pad: SECTION_PAD });
   return (
-    <section id={id} data-screen-label="FAQ" style={o.css} className={`scroll-mt-20 ${o.bgCls} ${SECTION_PX} ${o.padCls}`}>
+    <section id={id} data-screen-label="FAQ" style={o.css} className={`scroll-mt-20 ${o.bgCls} ${SECTION_PX} ${o.padCls} ${o.alignCls}`}>
       <div className="max-w-[820px] mx-auto">
         <div className="text-center mb-[40px]">
           {props.kicker && <div className="font-display font-bold text-[13px] tracking-[0.3em] uppercase text-gold mb-[14px]">{props.kicker}</div>}

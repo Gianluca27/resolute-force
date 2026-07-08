@@ -5,7 +5,7 @@ export default function Testimonials({ id, props, sectionStyle }: { id: string; 
   const o = sectionOverrides(sectionStyle, { bg: 'bg-panel border-y border-line', pad: SECTION_PAD });
   if (props.items.length === 0) return null;
   return (
-    <section id={id} data-screen-label="Testimonios" style={o.css} className={`scroll-mt-20 ${o.bgCls} ${SECTION_PX} ${o.padCls}`}>
+    <section id={id} data-screen-label="Testimonios" style={o.css} className={`scroll-mt-20 ${o.bgCls} ${SECTION_PX} ${o.padCls} ${o.alignCls}`}>
       <div className="max-w-[1180px] mx-auto">
         {props.kicker && <div className="font-display font-bold text-[13px] tracking-[0.3em] uppercase text-gold mb-[18px]">{props.kicker}</div>}
         {props.title && <h2 className="m-0 mb-10 font-display font-black uppercase leading-[0.92] tracking-[-0.01em] text-[clamp(2rem,4.5vw,3.2rem)]">{props.title}</h2>}

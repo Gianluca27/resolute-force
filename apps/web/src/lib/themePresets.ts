@@ -22,4 +22,16 @@ export const THEME_PRESETS: Array<{ id: string; label: string; colors: Theme['co
     id: 'acero', label: 'Acero',
     colors: { bg: '#0b0d10', panel: '#0f1216', card: '#171b21', text: '#f1f3f5', muted: '#8b939d', accent: '#64748b', accentDark: '#475569', secondary: '#cbd5e1' },
   },
+  {
+    id: 'arena', label: 'Arena',
+    colors: { bg: '#f4efe6', panel: '#ece4d4', card: '#fffdf7', text: '#201a12', muted: '#655c4d', accent: '#a34a08', accentDark: '#7f3a06', secondary: '#7a5a10' },
+  },
+  {
+    id: 'violeta', label: 'Violeta',
+    colors: { bg: '#0d0a1a', panel: '#131022', card: '#1b1730', text: '#f2f0fa', muted: '#9a93b8', accent: '#7c3aed', accentDark: '#6d28d9', secondary: '#22d3ee' },
+  },
+  {
+    id: 'vino', label: 'Vino',
+    colors: { bg: '#140a0d', panel: '#1a0d11', card: '#241318', text: '#f6f1f2', muted: '#a08e93', accent: '#b0223f', accentDark: '#8e1b33', secondary: '#d9a441' },
+  },
 ];
