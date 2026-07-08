@@ -54,19 +54,19 @@ export function navLinks(doc: PageDesignDoc): Array<{ href: string; label: strin
 function renderSection(s: PageSection, ctx: RenderCtx): ReactNode {
   switch (s.type) {
     case 'marquee': return <Marquee items={s.props.items} />;
-    case 'hero': return <Hero id={s.id} props={s.props} sectionStyle={s.style} anchors={ctx.anchors} />;
-    case 'manifiesto': return <Manifiesto id={s.id} props={s.props} sectionStyle={s.style} />;
-    case 'products': return <Productos id={s.id} props={s.props} sectionStyle={s.style} products={ctx.products} onAdd={ctx.onAdd} transferDiscountPct={ctx.content.transferDiscountPct} />;
-    case 'historia': return <Historia id={s.id} props={s.props} sectionStyle={s.style} />;
-    case 'countdown': return ctx.drop ? <Proximos id={s.id} drop={ctx.drop} sectionStyle={s.style} /> : null;
-    case 'contacto': return <Contacto id={s.id} props={s.props} sectionStyle={s.style} content={ctx.content} />;
-    case 'textImage': return <TextImage id={s.id} props={s.props} sectionStyle={s.style} />;
-    case 'ctaBanner': return <CtaBanner id={s.id} props={s.props} sectionStyle={s.style} />;
-    case 'gallery': return <Gallery id={s.id} props={s.props} sectionStyle={s.style} />;
-    case 'faq': return <Faq id={s.id} props={s.props} sectionStyle={s.style} />;
-    case 'sizeTable': return <SizeTable id={s.id} props={s.props} sectionStyle={s.style} />;
-    case 'testimonials': return <Testimonials id={s.id} props={s.props} sectionStyle={s.style} />;
-    case 'videoEmbed': return <VideoEmbed id={s.id} props={s.props} sectionStyle={s.style} />;
+    case 'hero': return <Hero id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} anchors={ctx.anchors} />;
+    case 'manifiesto': return <Manifiesto id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} />;
+    case 'products': return <Productos id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} products={ctx.products} onAdd={ctx.onAdd} transferDiscountPct={ctx.content.transferDiscountPct} />;
+    case 'historia': return <Historia id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} />;
+    case 'countdown': return ctx.drop ? <Proximos id={s.id} drop={ctx.drop} sectionStyle={s.style} layout={s.layout} /> : null;
+    case 'contacto': return <Contacto id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} content={ctx.content} />;
+    case 'textImage': return <TextImage id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} />;
+    case 'ctaBanner': return <CtaBanner id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} />;
+    case 'gallery': return <Gallery id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} />;
+    case 'faq': return <Faq id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} />;
+    case 'sizeTable': return <SizeTable id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} />;
+    case 'testimonials': return <Testimonials id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} />;
+    case 'videoEmbed': return <VideoEmbed id={s.id} props={s.props} sectionStyle={s.style} layout={s.layout} />;
     default: return null; // unknown type from a newer/older doc version — skip, never crash
   }
 }

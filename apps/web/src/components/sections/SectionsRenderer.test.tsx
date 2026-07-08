@@ -73,6 +73,56 @@ it('videoEmbed with an unrecognized URL renders no iframe (no injection)', () =>
   expect(container.querySelector('iframe')).toBeNull();
 });
 
+describe('free positioning (layout)', () => {
+  const drop = { visible: true, targetAt: '2027-01-01T00:00:00.000Z', title: 'Drop Uno', teaser: 'Se viene' } as RenderCtx['drop'];
+
+  it('every section type except marquee exposes movable elements (data-rf-el)', () => {
+    const d = doc([
+      ...DEFAULT_PAGE_DESIGN.sections,
+      { id: 'ti', type: 'textImage', visible: true, props: { kicker: 'k', title: 'T', body: 'b', imageUrl: '/a.png', imageSide: 'left', ctaLabel: 'Ver', ctaHref: '#x' } },
+      { id: 'cb', type: 'ctaBanner', visible: true, props: { title: 'T', subtitle: 's', ctaLabel: 'Ir', ctaHref: '#x', variant: 'accent' } },
+      { id: 'ga', type: 'gallery', visible: true, props: { kicker: '', title: 'G', columns: 3, images: [{ url: '/a.png', alt: '' }] } },
+      { id: 'fq', type: 'faq', visible: true, props: { kicker: '', title: 'F', items: [{ q: 'Q', a: 'A' }] } },
+      { id: 'st', type: 'sizeTable', visible: true, props: { kicker: '', title: 'S', note: 'n', columns: ['T'], rows: [['S']] } },
+      { id: 'te', type: 'testimonials', visible: true, props: { kicker: '', title: 'W', items: [{ quote: 'Q', name: 'N', detail: '' }] } },
+      { id: 've', type: 'videoEmbed', visible: true, props: { kicker: '', title: 'V', url: 'https://youtu.be/dQw4w9WgXcQ', caption: 'c' } },
+    ]);
+    const { container } = render(<SectionsRenderer doc={d} ctx={{ ...ctx, drop }} />);
+    for (const s of d.sections.filter((x) => x.visible && x.type !== 'marquee')) {
+      const root = container.querySelector(`#${s.id}`);
+      expect(root, s.id).not.toBeNull();
+      expect(root!.querySelectorAll('[data-rf-el]').length, `${s.type} sin elementos móviles`).toBeGreaterThan(0);
+    }
+    expect(container.querySelectorAll('[data-screen-label="Marquee"] [data-rf-el]').length).toBe(0);
+  });
+
+  it('applies offset CSS vars to the targeted element only', () => {
+    const d = doc([{
+      id: 'ti', type: 'textImage', visible: true,
+      layout: { title: { dx: 40, dy: -12 } },
+      props: { kicker: 'k', title: 'Hola', body: 'b', imageUrl: '/a.png', imageSide: 'left', ctaLabel: '', ctaHref: '' },
+    }]);
+    const { container } = render(<SectionsRenderer doc={d} ctx={ctx} />);
+    const title = container.querySelector('#ti [data-rf-el="title"]') as HTMLElement;
+    expect(title.style.getPropertyValue('--el-dx')).toBe('40px');
+    expect(title.style.getPropertyValue('--el-dy')).toBe('-12px');
+    const kicker = container.querySelector('#ti [data-rf-el="kicker"]') as HTMLElement;
+    expect(kicker.style.getPropertyValue('--el-dx')).toBe('');
+  });
+
+  it('width override adds the rf-el-w class and var', () => {
+    const d = doc([{
+      id: 'ti', type: 'textImage', visible: true,
+      layout: { image: { dx: 0, dy: 0, w: 720 } },
+      props: { kicker: '', title: 'T', body: 'b', imageUrl: '/a.png', imageSide: 'left', ctaLabel: '', ctaHref: '' },
+    }]);
+    const { container } = render(<SectionsRenderer doc={d} ctx={ctx} />);
+    const img = container.querySelector('#ti [data-rf-el="image"]') as HTMLElement;
+    expect(img.className).toContain('rf-el-w');
+    expect(img.style.getPropertyValue('--el-w')).toBe('720px');
+  });
+});
+
 it('wrap decorates every visible section (marquee included) without changing order', () => {
   const { container } = render(
     <SectionsRenderer doc={DEFAULT_PAGE_DESIGN} ctx={ctx}

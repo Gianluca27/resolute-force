@@ -1,8 +1,10 @@
-import type { CtaBannerProps, SectionStyle } from '@resolute/shared';
+import type { CtaBannerProps, SectionStyle, SectionLayout } from '@resolute/shared';
 import { sectionOverrides, SECTION_PX } from './shell';
+import { sectionEl } from './layoutEl';
 
-export default function CtaBanner({ id, props, sectionStyle }: { id: string; props: CtaBannerProps; sectionStyle?: SectionStyle }) {
+export default function CtaBanner({ id, props, sectionStyle, layout }: { id: string; props: CtaBannerProps; sectionStyle?: SectionStyle; layout?: SectionLayout }) {
   const o = sectionOverrides(sectionStyle, { bg: '', pad: 'py-[clamp(56px,9vh,100px)]' });
+  const el = sectionEl(layout);
   const v = props.variant;
   const wrapCls =
     v === 'accent' ? 'bg-red text-white'
@@ -23,10 +25,10 @@ export default function CtaBanner({ id, props, sectionStyle }: { id: string; pro
         </>
       )}
       <div className="relative z-[2] max-w-[900px] mx-auto text-center">
-        <h2 className="m-0 font-display font-black uppercase leading-[0.9] tracking-[-0.01em] text-[clamp(2rem,5vw,3.6rem)]">{props.title}</h2>
-        {props.subtitle && <p className="mx-auto mt-4 max-w-[560px] leading-[1.6] text-[clamp(15px,1.2vw,17px)] opacity-85">{props.subtitle}</p>}
+        <h2 {...el('title', 'm-0 font-display font-black uppercase leading-[0.9] tracking-[-0.01em] text-[clamp(2rem,5vw,3.6rem)]')}>{props.title}</h2>
+        {props.subtitle && <p {...el('subtitle', 'mx-auto mt-4 max-w-[560px] leading-[1.6] text-[clamp(15px,1.2vw,17px)] opacity-85')}>{props.subtitle}</p>}
         {props.ctaLabel && props.ctaHref && (
-          <a href={props.ctaHref} className={`inline-flex items-center gap-[10px] mt-8 no-underline font-display font-bold text-[16px] tracking-[0.13em] uppercase px-[32px] py-[16px] rounded-[var(--rf-btn-radius)] transition hover:-translate-y-[2px] ${btnCls}`}>{props.ctaLabel}</a>
+          <a href={props.ctaHref} {...el('cta', `inline-flex items-center gap-[10px] mt-8 no-underline font-display font-bold text-[16px] tracking-[0.13em] uppercase px-[32px] py-[16px] rounded-[var(--rf-btn-radius)] transition hover:-translate-y-[2px] ${btnCls}`)}>{props.ctaLabel}</a>
         )}
       </div>
     </section>

@@ -24,3 +24,10 @@ html { scroll-behavior: smooth; }
 body { margin: 0; background: rgb(var(--rf-bg)); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 ::selection { background: rgb(var(--rf-accent)); color: #fff; }
 input::placeholder { color: rgb(var(--rf-mut) / 0.6); }
+
+/* Elementos con posición libre (editor de diseño). Solo desktop: bajo 1024px
+   los offsets se ignoran y rige el layout responsive original. */
+@media (min-width: 1024px) {
+  .rf-el { transform: translate(var(--el-dx, 0px), var(--el-dy, 0px)); }
+  .rf-el-w { width: var(--el-w); max-width: var(--el-w); }
+}

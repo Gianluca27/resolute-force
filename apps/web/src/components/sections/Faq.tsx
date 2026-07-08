@@ -1,16 +1,18 @@
-import type { FaqProps, SectionStyle } from '@resolute/shared';
+import type { FaqProps, SectionStyle, SectionLayout } from '@resolute/shared';
 import { sectionOverrides, SECTION_PAD, SECTION_PX } from './shell';
+import { sectionEl } from './layoutEl';
 
-export default function Faq({ id, props, sectionStyle }: { id: string; props: FaqProps; sectionStyle?: SectionStyle }) {
+export default function Faq({ id, props, sectionStyle, layout }: { id: string; props: FaqProps; sectionStyle?: SectionStyle; layout?: SectionLayout }) {
   const o = sectionOverrides(sectionStyle, { bg: 'bg-panel border-y border-line', pad: SECTION_PAD });
+  const el = sectionEl(layout);
   return (
     <section id={id} data-screen-label="FAQ" style={o.css} className={`scroll-mt-20 ${o.bgCls} ${SECTION_PX} ${o.padCls} ${o.alignCls}`}>
       <div className="max-w-[820px] mx-auto">
         <div className="text-center mb-[40px]">
-          {props.kicker && <div className="font-display font-bold text-[13px] tracking-[0.3em] uppercase text-gold mb-[14px]">{props.kicker}</div>}
-          <h2 className="m-0 font-display font-black uppercase leading-[0.9] tracking-[-0.01em] text-[clamp(2.2rem,5vw,4rem)]">{props.title}</h2>
+          {props.kicker && <div {...el('kicker', 'font-display font-bold text-[13px] tracking-[0.3em] uppercase text-gold mb-[14px]')}>{props.kicker}</div>}
+          <h2 {...el('title', 'm-0 font-display font-black uppercase leading-[0.9] tracking-[-0.01em] text-[clamp(2.2rem,5vw,4rem)]')}>{props.title}</h2>
         </div>
-        <div className="flex flex-col gap-[10px]">
+        <div {...el('list', 'flex flex-col gap-[10px]')}>
           {props.items.map((it, i) => (
             <details key={i} className="group bg-card border border-line rounded-[var(--rf-radius)] px-[20px] py-[4px] open:border-line2">
               <summary className="cursor-pointer list-none flex items-center justify-between gap-4 py-[14px] font-display font-bold text-[17px] tracking-[0.04em] uppercase">

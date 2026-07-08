@@ -162,10 +162,25 @@ export const videoEmbedPropsSchema = z.object({
   caption: str(240),
 });
 
+// Free-positioning overrides per element (desktop only; mobile ignores them
+// and keeps the responsive layout). Keys are element names defined by each
+// section's markup ('title', 'image', …); unknown keys render as no-ops.
+export const elementLayoutSchema = z.object({
+  dx: z.number().int().min(-2000).max(2000), // px translate, applied ≥1024px
+  dy: z.number().int().min(-2000).max(2000),
+  w: z.number().int().min(40).max(2000).optional(), // width override: images resize, text re-wraps
+});
+export type ElementLayout = z.infer<typeof elementLayoutSchema>;
+
+export const sectionLayoutSchema = z.record(z.string().min(1).max(40), elementLayoutSchema)
+  .refine((r) => Object.keys(r).length <= 20, 'Demasiados elementos posicionados');
+export type SectionLayout = z.infer<typeof sectionLayoutSchema>;
+
 const base = {
   id: z.string().trim().min(1).max(40),
   visible: z.boolean(),
   style: sectionStyleSchema.optional(),
+  layout: sectionLayoutSchema.optional(),
 };
 
 export const sectionSchema = z.discriminatedUnion('type', [

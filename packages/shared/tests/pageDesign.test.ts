@@ -114,6 +114,35 @@ describe('sectionSchema', () => {
   });
 });
 
+describe('section layout (free positioning)', () => {
+  const gallery = { id: 'g1', type: 'gallery', visible: true, props: { kicker: '', title: '', columns: 3, images: [] } } as const;
+
+  it('accepts per-element offsets and keeps them in the parsed doc', () => {
+    const s = sectionSchema.parse({ ...gallery, layout: { title: { dx: 40, dy: -12 }, grid: { dx: 0, dy: 30, w: 720 } } });
+    expect(s.layout).toEqual({ title: { dx: 40, dy: -12 }, grid: { dx: 0, dy: 30, w: 720 } });
+  });
+
+  it('keeps docs without layout valid (legacy) and layout undefined', () => {
+    const s = sectionSchema.parse({ ...gallery });
+    expect(s.layout).toBeUndefined();
+  });
+
+  it('rejects offsets out of bounds', () => {
+    expect(sectionSchema.safeParse({ ...gallery, layout: { title: { dx: 5000, dy: 0 } } }).success).toBe(false);
+    expect(sectionSchema.safeParse({ ...gallery, layout: { title: { dx: 0, dy: -5000 } } }).success).toBe(false);
+  });
+
+  it('rejects width overrides out of bounds', () => {
+    expect(sectionSchema.safeParse({ ...gallery, layout: { image: { dx: 0, dy: 0, w: 10 } } }).success).toBe(false);
+    expect(sectionSchema.safeParse({ ...gallery, layout: { image: { dx: 0, dy: 0, w: 4000 } } }).success).toBe(false);
+  });
+
+  it('rejects non-integer offsets and oversized element keys', () => {
+    expect(sectionSchema.safeParse({ ...gallery, layout: { title: { dx: 1.5, dy: 0 } } }).success).toBe(false);
+    expect(sectionSchema.safeParse({ ...gallery, layout: { ['x'.repeat(50)]: { dx: 0, dy: 0 } } }).success).toBe(false);
+  });
+});
+
 describe('theme fonts', () => {
   it('every curated font id is accepted by the schema', () => {
     for (const f of FONT_OPTIONS) {
