@@ -70,6 +70,10 @@ export const adminApi = {
     req<PageDesignAdminDTO>('PUT', '/api/admin/page-design', { doc, updatedAt }),
   publishPageDesign: () => req<PageDesignAdminDTO>('POST', '/api/admin/page-design/publish'),
   discardPageDesign: () => req<PageDesignAdminDTO>('POST', '/api/admin/page-design/discard'),
+  listPageDesignVersions: () =>
+    req<{ versions: Array<{ id: number; publishedAt: string }> }>('GET', '/api/admin/page-design/versions'),
+  restorePageDesignVersion: (id: number) =>
+    req<PageDesignAdminDTO>('POST', `/api/admin/page-design/versions/${id}/restore`),
   uploadAsset: async (file: File) => {
     const fd = new FormData();
     fd.append('image', file);

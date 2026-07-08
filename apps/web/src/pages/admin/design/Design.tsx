@@ -7,7 +7,8 @@ import SectionList from './SectionList';
 import SectionForm from './SectionForm';
 import ThemeForm from './ThemeForm';
 import ConfirmDialog from './ConfirmDialog';
-import { IconUndo, IconRedo, IconMonitor, IconPhone, IconExternal } from './icons';
+import VersionHistory from './VersionHistory';
+import { IconUndo, IconRedo, IconMonitor, IconPhone, IconExternal, IconHistory } from './icons';
 import { btnCls, inputCls } from './fields';
 
 // Full-screen designer: left panel (sections/theme forms) + live preview iframe.
@@ -21,6 +22,7 @@ export default function Design() {
   const [mobile, setMobile] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [askDiscard, setAskDiscard] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => { void load(); }, [load]);
@@ -94,6 +96,10 @@ export default function Design() {
         </div>
         <div className="ml-auto flex items-center gap-3 flex-wrap">
           {dirty && <span className="text-gold text-[12px] font-display font-semibold tracking-[0.08em] uppercase">● Cambios sin publicar</span>}
+          <button type="button" onClick={() => setShowHistory(true)}
+            className="inline-flex items-center gap-1 bg-transparent border-0 cursor-pointer text-mut hover:text-tx text-[12px] font-display tracking-[0.08em] uppercase transition-colors p-0">
+            <IconHistory size={13} /> Historial
+          </button>
           <a href="/" target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-mut hover:text-tx no-underline text-[12px] font-display tracking-[0.08em] uppercase transition-colors">Ver publicada <IconExternal size={12} /></a>
           <button type="button" className={btnCls} disabled={!dirty} onClick={() => setAskDiscard(true)}>
             Descartar
@@ -178,6 +184,7 @@ export default function Design() {
         </main>
       </div>
 
+      <VersionHistory open={showHistory} onClose={() => setShowHistory(false)} />
       <ConfirmDialog open={askDiscard} title="Descartar cambios" confirmLabel="Descartar todo"
         onConfirm={async () => { setAskDiscard(false); await discard(); }} onCancel={() => setAskDiscard(false)}>
         Se pierden todos los cambios sin publicar y el borrador vuelve a la última versión publicada. Esto no se puede deshacer.
