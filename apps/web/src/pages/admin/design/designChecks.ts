@@ -64,6 +64,17 @@ function sectionIssues(s: PageSection): DesignIssue[] {
   }
 }
 
+// Beyond this, an element very likely sits outside its section on desktop.
+const FAR_DX = 600;
+const FAR_DY = 800;
+
+function layoutIssues(s: PageSection): DesignIssue[] {
+  const far = Object.values(s.layout ?? {}).some((l) => Math.abs(l.dx) > FAR_DX || Math.abs(l.dy) > FAR_DY);
+  return far
+    ? [{ severity: 'warn', sectionId: s.id, label: BLOCK_LABELS[s.type], message: 'Hay un elemento muy desplazado de su lugar: revisá en la vista previa que no se salga de la sección.' }]
+    : [];
+}
+
 export function checkDesign(doc: PageDesignDoc): DesignIssue[] {
   const visible = doc.sections.filter((s) => s.visible);
   const issues: DesignIssue[] = [];
@@ -71,7 +82,7 @@ export function checkDesign(doc: PageDesignDoc): DesignIssue[] {
   if (visible.length === 0) {
     issues.push({ severity: 'error', label: 'Página', message: 'No hay ninguna sección visible: la página quedaría vacía.' });
   }
-  for (const s of visible) issues.push(...sectionIssues(s));
+  for (const s of visible) issues.push(...sectionIssues(s), ...layoutIssues(s));
   issues.push(...contrastWarnings(doc.theme).map((w) => ({ severity: 'warn' as const, label: 'Tema', message: w })));
 
   return issues.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === 'error' ? -1 : 1));

@@ -22,6 +22,44 @@ beforeEach(() => {
   useDesigner.setState({ doc, saveState: 'idle', error: '', selectedId: null, dirty: false, history: emptyHistory<PageDesignDoc>() });
 });
 
+describe('element position panel', () => {
+  const moved: PageSection = {
+    id: 'ti-1', type: 'textImage', visible: true,
+    layout: { title: { dx: 40, dy: -12 }, image: { dx: 0, dy: 0, w: 700 } },
+    props: { kicker: '', title: 'T', body: 'b', imageUrl: '/a.png', imageSide: 'left', ctaLabel: '', ctaHref: '' },
+  };
+
+  beforeEach(() => {
+    const doc = useDesigner.getState().doc!;
+    useDesigner.setState({ doc: { ...doc, sections: [...doc.sections, JSON.parse(JSON.stringify(moved)) as PageSection] } });
+  });
+
+  it('lists moved elements with their offsets and resets one', () => {
+    render(<MemoryRouter><SectionForm section={moved} /></MemoryRouter>);
+    expect(screen.getByText('Posición de elementos')).toBeInTheDocument();
+    expect(screen.getByText('40,-12')).toBeInTheDocument();
+    expect(screen.getByText('0,0 · 700px')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Restaurar Imagen' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar Título' }));
+    const stored = useDesigner.getState().doc!.sections.find((s) => s.id === 'ti-1');
+    expect(stored?.layout).toEqual({ image: { dx: 0, dy: 0, w: 700 } });
+  });
+
+  it('restores the whole section layout', () => {
+    render(<MemoryRouter><SectionForm section={moved} /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar layout original' }));
+    const stored = useDesigner.getState().doc!.sections.find((s) => s.id === 'ti-1');
+    expect(stored?.layout).toBeUndefined();
+  });
+
+  it('hides the panel when nothing was moved', () => {
+    const plain = { ...moved, id: 'ti-2', layout: undefined };
+    render(<MemoryRouter><SectionForm section={plain} /></MemoryRouter>);
+    expect(screen.queryByText('Posición de elementos')).not.toBeInTheDocument();
+  });
+});
+
 it('gallery images expose an alt text field that patches the doc', () => {
   render(<MemoryRouter><SectionForm section={gallery} /></MemoryRouter>);
   const altInputs = screen.getAllByPlaceholderText('Descripción (texto alternativo)');

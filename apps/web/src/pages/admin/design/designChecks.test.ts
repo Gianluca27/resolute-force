@@ -25,6 +25,24 @@ it('ignores problems in hidden sections', () => {
   expect(checkDesign(d)).toEqual([]);
 });
 
+it('warns when an element was dragged suspiciously far, once per section', () => {
+  const d = doc((del) => {
+    const h = del.sections.find((s) => s.type === 'hero')!;
+    h.layout = { title1: { dx: 700, dy: 0 }, subtitle: { dx: 0, dy: -900 } };
+  });
+  const issues = checkDesign(d).filter((i) => /desplazad/i.test(i.message));
+  expect(issues).toHaveLength(1);
+  expect(issues[0]).toMatchObject({ severity: 'warn', sectionId: 'hero' });
+});
+
+it('does not warn for moderate offsets', () => {
+  const d = doc((del) => {
+    const h = del.sections.find((s) => s.type === 'hero')!;
+    h.layout = { title1: { dx: 300, dy: -120, w: 700 } };
+  });
+  expect(checkDesign(d)).toEqual([]);
+});
+
 it('warns on a visible section missing its image', () => {
   const d = doc((del) => {
     const m = del.sections.find((s) => s.type === 'manifiesto')!;

@@ -17,6 +17,21 @@ export const BLOCK_LABELS: Record<SectionType, string> = {
   videoEmbed: 'Video',
 };
 
+// Labels for movable elements (data-rf-el keys) — hover tag in the preview and
+// rows in the "Posición de elementos" panel. Keys not listed fall back to the key.
+const ELEMENT_LABELS: Record<string, string> = {
+  kicker: 'Kicker', title: 'Título', title1: 'Título línea 1', title2: 'Título línea 2',
+  subtitle: 'Subtítulo', body: 'Texto', description: 'Descripción', teaser: 'Teaser',
+  image: 'Imagen', video: 'Video', caption: 'Epígrafe', note: 'Nota',
+  cta: 'Botón', ctaPrimary: 'Botón principal', ctaSecondary: 'Botón secundario',
+  badges: 'Badges', principles: 'Principios', stats: 'Estadísticas', timer: 'Countdown',
+  grid: 'Grilla', cards: 'Tarjetas', list: 'Listado', table: 'Tabla',
+};
+
+export function elementLabel(key: string): string {
+  return ELEMENT_LABELS[key] ?? key;
+}
+
 /** One-line summary shown next to the block label in the section list. */
 export function blockSummary(s: PageSection): string {
   switch (s.type) {

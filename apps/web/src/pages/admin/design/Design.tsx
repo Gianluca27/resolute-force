@@ -9,6 +9,7 @@ import ThemeForm from './ThemeForm';
 import ConfirmDialog from './ConfirmDialog';
 import VersionHistory from './VersionHistory';
 import { checkDesign, type DesignIssue } from './designChecks';
+import { moveElement, resizeElement } from './elementLayout';
 import { IconUndo, IconRedo, IconMonitor, IconPhone, IconExternal, IconHistory, IconAlert } from './icons';
 import { btnCls, inputCls } from './fields';
 
@@ -37,8 +38,14 @@ export default function Design() {
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return;
-      const data = e.data as { type?: string; id?: string };
-      if (data?.type === 'rf-preview-ready') {
+      const data = e.data as { type?: string; id?: string; key?: string; dx?: number; dy?: number; w?: number };
+      if (data?.type === 'rf-el-move' && data.id && data.key) {
+        const { id, key, dx = 0, dy = 0 } = data;
+        useDesigner.getState().update((d) => moveElement(d, id, key, dx, dy));
+      } else if (data?.type === 'rf-el-resize' && data.id && data.key && typeof data.w === 'number') {
+        const { id, key, w } = data;
+        useDesigner.getState().update((d) => resizeElement(d, id, key, w));
+      } else if (data?.type === 'rf-preview-ready') {
         const d = useDesigner.getState().doc;
         if (d) iframeRef.current?.contentWindow?.postMessage({ type: 'rf-design-doc', doc: d }, window.location.origin);
       } else if (data?.type === 'rf-section-click' && data.id) {

@@ -10,6 +10,8 @@ import { adminApi } from '../../../lib/adminApi';
 import { useDesigner } from '../../../store/designer';
 import { TextField, TextAreaField, ColorField, Segmented, ImageField, ItemRow, moveItem, btnCls, inputCls } from './fields';
 import { IconUp, IconDown, IconTrash } from './icons';
+import { elementLabel } from './blockDefs';
+import { resetElement, resetSectionLayout } from './elementLayout';
 
 // Every form edits its section through the designer store; `patch` merges into
 // the section's props and triggers the debounced autosave.
@@ -355,6 +357,32 @@ function StyleEditor({ type, style, onChange }: { type: PageSection['type']; sty
   );
 }
 
+// Read-only list of moved elements; the canvas is the preview, the panel only
+// shows state and offers the way back.
+function LayoutPanel({ section }: { section: PageSection }) {
+  const update = useDesigner((st) => st.update);
+  const entries = Object.entries(section.layout ?? {});
+  if (entries.length === 0) return null;
+  return (
+    <div className="border-t border-line pt-3 mt-1 flex flex-col gap-2">
+      <span className="text-mut text-[11px] font-display font-semibold tracking-[0.14em] uppercase">Posición de elementos</span>
+      {entries.map(([key, l]) => (
+        <div key={key} className="flex items-center gap-2 border border-line rounded-[3px] bg-panel px-2 py-[6px]">
+          <span className="flex-1 min-w-0 text-tx text-[13px] truncate">{elementLabel(key)}</span>
+          <span className="text-mut text-[12px] font-mono whitespace-nowrap">{l.dx},{l.dy}{l.w != null ? ` · ${l.w}px` : ''}</span>
+          <button type="button" aria-label={`Restaurar ${elementLabel(key)}`} title="Restaurar posición original"
+            className="bg-transparent border-0 cursor-pointer text-mut hover:text-red p-1"
+            onClick={() => update((doc) => resetElement(doc, section.id, key))}><IconTrash size={13} /></button>
+        </div>
+      ))}
+      <button type="button" className={btnCls} onClick={() => update((doc) => resetSectionLayout(doc, section.id))}>
+        Restaurar layout original
+      </button>
+      <p className="text-mut text-[12px] m-0">Arrastrá elementos en la vista previa para moverlos. En celular se ignoran los desplazamientos y se usa el orden original.</p>
+    </div>
+  );
+}
+
 export default function SectionForm({ section }: { section: PageSection }) {
   const update = useDesigner((st) => st.update);
 
@@ -391,6 +419,7 @@ export default function SectionForm({ section }: { section: PageSection }) {
     <div className="flex flex-col gap-3">
       {form}
       {section.type !== 'marquee' && <StyleEditor type={section.type} style={section.style} onChange={patchStyle} />}
+      {section.type !== 'marquee' && <LayoutPanel section={section} />}
     </div>
   );
 }
