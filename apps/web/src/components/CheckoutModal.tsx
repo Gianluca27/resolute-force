@@ -75,6 +75,7 @@ export default function CheckoutModal() {
       const r = await api.paymentCard({
         items: lineItems, customer: form, token: data.token, installments: data.installments,
         paymentMethodId: data.payment_method_id, issuerId: data.issuer_id, payer: data.payer,
+        deviceId: (window as unknown as { MP_DEVICE_SESSION_ID?: string }).MP_DEVICE_SESSION_ID,
       });
       if (r.status === 'approved') {
         setConfirmation({ orderNo: r.orderNo, total: r.total ?? total, count: r.count ?? cartCount(items), pay: 'card', name: r.name ?? form.nombre });

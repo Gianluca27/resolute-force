@@ -27,7 +27,7 @@ export const api = {
   content: () => get<ContentDTO>('/api/content'),
   pageDesign: () => get<PageDesignDoc>('/api/page-design'),
   quote: (items: CartLineInput[]) => post<QuoteResult>('/api/checkout/quote', { items }),
-  paymentCard: (body: { items: CartLineInput[]; customer: CustomerInput; token: string; installments: number; paymentMethodId: string; issuerId?: string; payer: { email: string; identification?: { type: string; number: string } } }) => post<CardResult>('/api/payments/card', body),
+  paymentCard: (body: { items: CartLineInput[]; customer: CustomerInput; token: string; installments: number; paymentMethodId: string; issuerId?: string; deviceId?: string; payer: { email: string; identification?: { type: string; number: string } } }) => post<CardResult>('/api/payments/card', body),
   preference: (body: { items: CartLineInput[]; customer: CustomerInput }) => post<PrefResult>('/api/payments/preference', body),
   transferOrder: (body: { items: CartLineInput[]; customer: CustomerInput }) => post<TransferResult>('/api/orders/transfer', body),
 };

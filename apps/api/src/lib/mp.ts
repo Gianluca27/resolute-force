@@ -9,7 +9,7 @@ const paymentRefund = new PaymentRefund(client);
 
 export async function createCardPayment(i: {
   amount: number; token: string; installments: number; paymentMethodId: string; issuerId?: string;
-  payerEmail: string; identification?: { type: string; number: string }; orderNo: string;
+  payerEmail: string; identification?: { type: string; number: string }; orderNo: string; deviceId?: string;
 }) {
   const res = await payment.create({
     body: {
@@ -19,6 +19,9 @@ export async function createCardPayment(i: {
       external_reference: i.orderNo, description: `Resolute Force ${i.orderNo}`,
       notification_url: `${env.PUBLIC_API_URL}/api/payments/webhook`,
     },
+    // MP anti-fraud device fingerprint (security.js on the frontend) — forwarded as
+    // X-Meli-Session-Id. Missing this can cause MP to reject the charge outright.
+    requestOptions: i.deviceId ? { meliSessionId: i.deviceId } : undefined,
   });
   return { id: res.id, status: res.status, statusDetail: res.status_detail };
 }

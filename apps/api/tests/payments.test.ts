@@ -38,6 +38,12 @@ describe('POST /api/payments/card', () => {
     expect(v.stock).toBe(25);
   });
 
+  it('forwards the MP anti-fraud deviceId (security.js) to createCardPayment when sent by the client', async () => {
+    vi.mocked(mp.createCardPayment).mockResolvedValue({ id: 333, status: 'approved', statusDetail: 'accredited' });
+    await request(app).post('/api/payments/card').send({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer, token: 'tok', installments: 1, paymentMethodId: 'visa', payer: { email: 'ana@x.com' }, deviceId: 'device-session-xyz' });
+    expect(mp.createCardPayment).toHaveBeenCalledWith(expect.objectContaining({ deviceId: 'device-session-xyz' }));
+  });
+
   it('out-of-stock at quote time → 409 and no charge attempted', async () => {
     await prisma.variant.updateMany({ where: { productId: navyId, size: 'M' }, data: { stock: 0 } });
     const res = await request(app).post('/api/payments/card').send({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer, token: 'tok', installments: 1, paymentMethodId: 'visa', payer: { email: 'ana@x.com' } });
@@ -62,6 +68,19 @@ describe('POST /api/payments/card', () => {
     const v = await prisma.variant.findFirstOrThrow({ where: { productId: navyId, size: 'M' } });
     expect(v.stock).toBe(0); // never decremented below zero
   });
+
+  it('mp.createCardPayment throwing (e.g. misconfigured credentials) logs the error and cancels the order instead of leaving it pending forever', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(mp.createCardPayment).mockRejectedValue(new Error('Unauthorized use of live credentials'));
+    const res = await request(app).post('/api/payments/card').send({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer, token: 'tok', installments: 1, paymentMethodId: 'visa', payer: { email: 'ana@x.com' } });
+    expect(res.status).toBe(500);
+    expect(errorSpy).toHaveBeenCalled();
+    const order = await prisma.order.findFirstOrThrow({ where: { paymentMethod: 'card' }, orderBy: { createdAt: 'desc' } });
+    expect(order.status).toBe('cancelled');
+    const v = await prisma.variant.findFirstOrThrow({ where: { productId: navyId, size: 'M' } });
+    expect(v.stock).toBe(25); // never touched — no charge was ever confirmed
+    errorSpy.mockRestore();
+  });
 });
 
 describe('POST /api/payments/preference', () => {
@@ -71,6 +90,17 @@ describe('POST /api/payments/preference', () => {
     expect(res.body.preferenceId).toBe('PREF-1');
     expect(res.body.orderNo).toMatch(/^RF-/);
     expect(await prisma.order.count({ where: { status: 'pending', paymentMethod: 'wallet' } })).toBe(1);
+  });
+
+  it('mp.createPreference throwing (e.g. misconfigured credentials) logs the error and cancels the order instead of leaving it pending forever', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(mp.createPreference).mockRejectedValueOnce(new Error('notificaction_url attribute must be url valid'));
+    const res = await request(app).post('/api/payments/preference').send({ items: [{ productId: navyId, size: 'M', qty: 1 }], customer });
+    expect(res.status).toBe(500);
+    expect(errorSpy).toHaveBeenCalled();
+    const order = await prisma.order.findFirstOrThrow({ where: { paymentMethod: 'wallet' }, orderBy: { createdAt: 'desc' } });
+    expect(order.status).toBe('cancelled');
+    errorSpy.mockRestore();
   });
 });
 

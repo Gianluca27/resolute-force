@@ -36,17 +36,29 @@ paymentsRouter.post('/card', async (req, res) => {
   const schema = base.extend({
     token: z.string().min(1), installments: z.number().int().min(1), paymentMethodId: z.string().min(1),
     issuerId: z.string().optional(),
+    // MP anti-fraud device fingerprint (window.MP_DEVICE_SESSION_ID from security.js) —
+    // forwarded to MP as X-Meli-Session-Id. Optional: absent if the script failed to load.
+    deviceId: z.string().optional(),
     payer: z.object({ email: z.string().email(), identification: z.object({ type: z.string(), number: z.string() }).optional() }),
   });
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Datos de pago inválidos' });
 
+  let order: Awaited<ReturnType<typeof createOrder>>['order'];
   try {
-    const { order } = await createOrder({ items: parsed.data.items, customer: parsed.data.customer, method: 'card' });
+    ({ order } = await createOrder({ items: parsed.data.items, customer: parsed.data.customer, method: 'card' }));
+  } catch (e) {
+    if (e instanceof QuoteError) return res.status(409).json({ error: e.message });
+    console.error('[payments/card] createOrder', e);
+    return res.status(500).json({ error: 'No se pudo procesar el pago' });
+  }
+
+  try {
     const payment = await mp.createCardPayment({
       amount: order.total, token: parsed.data.token, installments: parsed.data.installments,
       paymentMethodId: parsed.data.paymentMethodId, issuerId: parsed.data.issuerId,
       payerEmail: parsed.data.payer.email, identification: parsed.data.payer.identification, orderNo: order.orderNo,
+      deviceId: parsed.data.deviceId,
     });
     if (payment.status === 'approved') {
       const outcome = await confirmOrRefund(order.orderNo, String(payment.id));
@@ -58,7 +70,10 @@ paymentsRouter.post('/card', async (req, res) => {
     await prisma.order.update({ where: { id: order.id }, data: { mpPaymentId: String(payment.id), status: payment.status === 'in_process' ? 'pending' : 'cancelled' } });
     return res.json({ status: payment.status, orderNo: order.orderNo, detail: payment.statusDetail });
   } catch (e) {
-    if (e instanceof QuoteError) return res.status(409).json({ error: e.message });
+    // Order already exists at this point (created above) — never leave it stuck in `pending`
+    // forever when MP itself couldn't be reached/charged (bad credentials, network, etc).
+    console.error('[payments/card]', order.orderNo, e);
+    await prisma.order.update({ where: { id: order.id }, data: { status: 'cancelled' } }).catch((updateErr) => console.error('[payments/card] cancel-on-error', order.orderNo, updateErr));
     return res.status(500).json({ error: 'No se pudo procesar el pago' });
   }
 });
@@ -66,13 +81,26 @@ paymentsRouter.post('/card', async (req, res) => {
 paymentsRouter.post('/preference', async (req, res) => {
   const parsed = base.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Datos inválidos' });
+
+  let order: Awaited<ReturnType<typeof createOrder>>['order'];
+  let quote: Awaited<ReturnType<typeof createOrder>>['quote'];
   try {
-    const { order, quote } = await createOrder({ items: parsed.data.items, customer: parsed.data.customer, method: 'wallet' });
+    ({ order, quote } = await createOrder({ items: parsed.data.items, customer: parsed.data.customer, method: 'wallet' }));
+  } catch (e) {
+    if (e instanceof QuoteError) return res.status(409).json({ error: e.message });
+    console.error('[payments/preference] createOrder', e);
+    return res.status(500).json({ error: 'No se pudo crear la preferencia' });
+  }
+
+  try {
     const pref = await mp.createPreference({ orderNo: order.orderNo, customer: parsed.data.customer, lines: quote.lines });
     await prisma.order.update({ where: { id: order.id }, data: { mpPreferenceId: pref.id } });
     return res.json({ preferenceId: pref.id, initPoint: pref.initPoint, orderNo: order.orderNo });
   } catch (e) {
-    if (e instanceof QuoteError) return res.status(409).json({ error: e.message });
+    // Order already exists at this point — never leave it stuck in `pending` forever when MP
+    // itself couldn't be reached (bad credentials, notification_url rejected, network, etc).
+    console.error('[payments/preference]', order.orderNo, e);
+    await prisma.order.update({ where: { id: order.id }, data: { status: 'cancelled' } }).catch((updateErr) => console.error('[payments/preference] cancel-on-error', order.orderNo, updateErr));
     return res.status(500).json({ error: 'No se pudo crear la preferencia' });
   }
 });
